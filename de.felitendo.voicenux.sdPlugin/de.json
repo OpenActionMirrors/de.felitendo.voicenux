@@ -1,0 +1,56 @@
+{
+	"Name": "Voicenux",
+	"Description": "Steuere den Stimmverzerrer Voicenux mit OpenDeck: Stimmen mit Bild, das Soundboard, Stummschalten und zum Sprechen drücken.",
+	"de.felitendo.voicenux.voice": {
+		"Name": "Stimme",
+		"Tooltip": "Eine Stimme nehmen. Zeigt ihr Bild, mit Rahmen, solange sie aktiv ist."
+	},
+	"de.felitendo.voicenux.sound": {
+		"Name": "Sound",
+		"Tooltip": "Einen Sound vom Soundboard abspielen. Zeigt sein Bild, mit Rahmen, solange er läuft."
+	},
+	"de.felitendo.voicenux.voicechanger": {
+		"Name": "Stimmverzerrer",
+		"Tooltip": "Den Stimmverzerrer an- oder ausschalten."
+	},
+	"de.felitendo.voicenux.mute": {
+		"Name": "Stummschalten",
+		"Tooltip": "Dein Mikrofon stumm- oder lautschalten, oder zum Sprechen drücken."
+	},
+	"de.felitendo.voicenux.hearmyself": {
+		"Name": "Mich hören",
+		"Tooltip": "Deine verzerrte Stimme im Kopfhörer hören, an oder aus."
+	},
+	"de.felitendo.voicenux.randomvoice": {
+		"Name": "Zufällige Stimme",
+		"Tooltip": "Eine zufällige Stimme nehmen, aus deinen Favoriten, sobald es mindestens zwei sind."
+	},
+	"de.felitendo.voicenux.nextvoice": {
+		"Name": "Nächste Stimme",
+		"Tooltip": "Die nächste oder vorherige Stimme nehmen. Kann die aktive Stimme zeigen."
+	},
+	"de.felitendo.voicenux.stopsounds": {
+		"Name": "Sounds stoppen",
+		"Tooltip": "Alle Sounds vom Soundboard stoppen."
+	},
+	"de.felitendo.voicenux.background": {
+		"Name": "Hintergrund",
+		"Tooltip": "Hintergrundgeräusche der Stimme, etwa Regen oder eine Menge, an oder aus."
+	},
+	"de.felitendo.voicenux.soundvolume": {
+		"Name": "Soundboard-Lautstärke",
+		"Tooltip": "Das Soundboard lauter, leiser oder auf einen Wert stellen. Halten macht weiter."
+	},
+	"de.felitendo.voicenux.hearsounds": {
+		"Name": "Sounds hören",
+		"Tooltip": "Die Sounds vom Soundboard selbst hören, an oder aus."
+	},
+	"de.felitendo.voicenux.voicedial": {
+		"Name": "Stimme (Drehregler)",
+		"Tooltip": "Drehen wählt eine Stimme (mit Bild), Drücken nimmt sie."
+	},
+	"de.felitendo.voicenux.soundvolumedial": {
+		"Name": "Soundboard-Lautstärke (Drehregler)",
+		"Tooltip": "Drehen ändert die Lautstärke des Soundboards, Drücken stoppt alle Sounds."
+	}
+}

@@ -1,0 +1,303 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+	"UUID": "de.felitendo.voicenux",
+	"Name": "Voicenux",
+	"Version": "0.1.0",
+	"Author": "Felitendo",
+	"Description": "Control the Voicenux voice changer from OpenDeck: voices with their pictures, the soundboard, mute and push to talk.",
+	"URL": "https://github.com/FeloDeck/voicenux-plugin",
+	"Icon": "images/plugin",
+	"Category": "Voicenux",
+	"CategoryIcon": "images/category",
+	"CodePath": "plugin/main.js",
+	"Nodejs": {
+		"Version": "22"
+	},
+	"PropertyInspectorPath": "pi/index.html",
+	"SDKVersion": 2,
+	"OS": [
+		{
+			"Platform": "linux"
+		}
+	],
+	"Actions": [
+		{
+			"UUID": "de.felitendo.voicenux.voice",
+			"Name": "Voice",
+			"Icon": "images/actions/voice",
+			"Tooltip": "Use a voice. Shows its picture, with a frame while it is in use.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/voice",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.sound",
+			"Name": "Sound",
+			"Icon": "images/actions/sound",
+			"Tooltip": "Play a sound of the soundboard. Shows its picture, with a frame while it plays.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/sound",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.voicechanger",
+			"Name": "Voice Changer",
+			"Icon": "images/actions/voicechanger",
+			"Tooltip": "Turn the voice changer on or off.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/voicechanger",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				},
+				{
+					"Image": "images/keys/voicechanger-on",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.mute",
+			"Name": "Mute",
+			"Icon": "images/actions/mic",
+			"Tooltip": "Mute or unmute your microphone, or push to talk.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/unmuted",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				},
+				{
+					"Image": "images/keys/muted",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.hearmyself",
+			"Name": "Hear Myself",
+			"Icon": "images/actions/headphones",
+			"Tooltip": "Hear your changed voice in your headphones, on or off.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/hearmyself",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				},
+				{
+					"Image": "images/keys/hearmyself-on",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.randomvoice",
+			"Name": "Random Voice",
+			"Icon": "images/actions/random",
+			"Tooltip": "Use a random voice, out of your favorites when you have two or more.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/random",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.nextvoice",
+			"Name": "Next Voice",
+			"Icon": "images/actions/next",
+			"Tooltip": "Use the next or previous voice. Can show the voice in use.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/next",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.stopsounds",
+			"Name": "Stop Sounds",
+			"Icon": "images/actions/stop",
+			"Tooltip": "Stop every sound of the soundboard.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/stopsounds",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				},
+				{
+					"Image": "images/keys/stopsounds-on",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.background",
+			"Name": "Background",
+			"Icon": "images/actions/background",
+			"Tooltip": "Background sounds of the voice, like rain or a crowd, on or off.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/background",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				},
+				{
+					"Image": "images/keys/background-on",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.soundvolume",
+			"Name": "Soundboard Volume",
+			"Icon": "images/actions/volumeUp",
+			"Tooltip": "Turn the soundboard louder, quieter or to a set value. Hold the key to keep going.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/soundvolume",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.hearsounds",
+			"Name": "Hear Sounds",
+			"Icon": "images/actions/hearsounds",
+			"Tooltip": "Hear the sounds of the soundboard yourself, on or off.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/hearsounds",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				},
+				{
+					"Image": "images/keys/hearsounds-on",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.voicedial",
+			"Name": "Voice (Dial)",
+			"Icon": "images/actions/voice",
+			"Tooltip": "Turn the dial to pick a voice (with its picture), press to use it.",
+			"Controllers": [
+				"Encoder"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/encoder/voice-key"
+				}
+			],
+			"Encoder": {
+				"layout": "layouts/voice-dial.json",
+				"Icon": "images/encoder/voice",
+				"TriggerDescription": {
+					"Rotate": "Pick a voice",
+					"Push": "Use it",
+					"Touch": "Use it"
+				}
+			}
+		},
+		{
+			"UUID": "de.felitendo.voicenux.soundvolumedial",
+			"Name": "Soundboard Volume (Dial)",
+			"Icon": "images/actions/volume",
+			"Tooltip": "Turn the dial for the soundboard volume, press to stop all sounds.",
+			"Controllers": [
+				"Encoder"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/encoder/volume-key"
+				}
+			],
+			"Encoder": {
+				"layout": "layouts/dial.json",
+				"Icon": "images/encoder/volume",
+				"TriggerDescription": {
+					"Rotate": "Volume",
+					"Push": "Stop all sounds",
+					"Touch": "Stop all sounds"
+				}
+			}
+		}
+	]
+}

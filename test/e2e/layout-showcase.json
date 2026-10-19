@@ -1,0 +1,23 @@
+{
+	"keys": {
+		"0": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "robot" } },
+		"1": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "demon" } },
+		"2": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "chipmunk" } },
+		"3": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "alien" } },
+		"4": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "santa" } },
+		"5": { "action": "de.felitendo.voicenux.sound", "settings": { "sound": "vine-boom" } },
+		"6": { "action": "de.felitendo.voicenux.sound", "settings": { "sound": "bruh" } },
+		"7": { "action": "de.felitendo.voicenux.sound", "settings": { "sound": "sad-violin" } },
+		"8": { "action": "de.felitendo.voicenux.stopsounds" },
+		"9": { "action": "de.felitendo.voicenux.soundvolume" },
+		"10": { "action": "de.felitendo.voicenux.voicechanger" },
+		"11": { "action": "de.felitendo.voicenux.mute" },
+		"12": { "action": "de.felitendo.voicenux.hearmyself" },
+		"13": { "action": "de.felitendo.voicenux.randomvoice" },
+		"14": { "action": "de.felitendo.voicenux.nextvoice", "settings": { "look": "voice" } }
+	},
+	"dials": {
+		"0": { "action": "de.felitendo.voicenux.voicedial" },
+		"1": { "action": "de.felitendo.voicenux.soundvolumedial" }
+	}
+}

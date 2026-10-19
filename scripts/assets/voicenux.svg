@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <!-- The app's gradient: CSS linear-gradient(120deg, ...) on a square. -->
+    <linearGradient id="bg" x1="-0.09" y1="0.16" x2="1.09" y2="0.84">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="0.5" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="10" width="112" height="112" rx="30" fill="#0d2c66" opacity="0.35"/>
+  <rect x="8" y="6" width="112" height="112" rx="30" fill="url(#bg)"/>
+  <g fill="#ffffff">
+    <rect x="19.5" y="31" width="13" height="62" rx="6.5"/>
+    <rect x="38.5" y="47" width="13" height="46" rx="6.5" opacity="0.92"/>
+    <rect x="57.5" y="63" width="13" height="30" rx="6.5" opacity="0.85"/>
+    <rect x="76.5" y="47" width="13" height="46" rx="6.5" opacity="0.92"/>
+    <rect x="95.5" y="31" width="13" height="62" rx="6.5"/>
+  </g>
+</svg>
