@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 import { ACTIONS } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/index.js";
 import { Mute, VoiceChanger } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/switches.js";
-import { Sound, SoundVolume } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/sounds.js";
+import { RandomSound, Sound, SoundVolume } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/sounds.js";
 import { NextVoice, RandomVoice, Voice, VoiceDial } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/voices.js";
 import { LANGUAGES, setLanguage, t, translateMessage } from "../de.felitendo.voicenux.sdPlugin/plugin/lib/i18n.js";
 import { pictureKeySvg, statusKey, titleLine } from "../de.felitendo.voicenux.sdPlugin/plugin/lib/render.js";
@@ -133,6 +133,19 @@ test("a sound key plays in its own mode, also with an older Voicenux", async () 
 	await old.action.onPress();
 	assert.deepEqual(old.client.calls.at(-1), ["stop-sound", "airhorn"]);
 	await assert.rejects(old.action.onPress({ op: "overlap" }), /needs a newer Voicenux/);
+});
+
+test("a random sound key plays the sound it shows, then picks another one", async () => {
+	const { action, client } = key(RandomSound, { look: "next" });
+	client.sounds = [...SOUNDS, { id: "bruh", name: "Bruh", icon: "face", mode: "restart", volume: 100 }, { id: "coin", name: "Coin", icon: "coin", mode: "restart", volume: 100 }];
+	for (let i = 0; i < 20; i++) {
+		const shown = action.next().id;
+		await action.onPress();
+		assert.deepEqual(client.calls.at(-1), ["sound-restart", shown]);
+		assert.notEqual(action.next().id, shown, "the same sound twice in a row");
+	}
+	client.sounds = [];
+	await assert.rejects(action.onPress(), /no sounds/);
 });
 
 test("soundboard volume stays between 0 and 100", async () => {

@@ -63,7 +63,7 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 ## Actions
 
 <details>
-<summary>All 13 actions</summary>
+<summary>All 14 actions</summary>
 
 | Action | What it does |
 |---|---|
@@ -75,6 +75,7 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 | Random Voice | A random voice, out of your favorites when you have two or more. |
 | Next Voice | The next or previous voice, out of your favorites when you have some. Can show the voice in use. |
 | Stop Sounds | Stop all sounds that play. White while one plays. |
+| Random Sound | A random sound, never the same one twice in a row. Shows a dice, or already the sound that comes next. |
 | Background | Background sounds of the voice on or off. |
 | Soundboard Volume | Make the sounds louder, quieter or set their volume. Hold to keep going. |
 | Hear Sounds | Hear the sounds yourself too. |

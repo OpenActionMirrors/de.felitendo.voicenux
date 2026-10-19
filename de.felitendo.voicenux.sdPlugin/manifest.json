@@ -186,6 +186,24 @@
 			]
 		},
 		{
+			"UUID": "de.felitendo.voicenux.randomsound",
+			"Name": "Random Sound",
+			"Icon": "images/actions/random",
+			"Tooltip": "Play a random sound of the soundboard. Shows a dice, or already the sound that plays next.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/random",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
 			"UUID": "de.felitendo.voicenux.background",
 			"Name": "Background",
 			"Icon": "images/actions/background",

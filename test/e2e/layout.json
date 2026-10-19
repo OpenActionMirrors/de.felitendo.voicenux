@@ -8,7 +8,7 @@
 		"5": { "action": "de.felitendo.voicenux.voicechanger", "settings": { "mode": "holdOn" } },
 		"6": { "action": "de.felitendo.voicenux.mute" },
 		"7": { "action": "de.felitendo.voicenux.hearmyself" },
-		"8": { "action": "de.felitendo.voicenux.background", "settings": { "showState": true } },
+		"8": { "action": "de.felitendo.voicenux.randomsound", "settings": { "look": "next" } },
 		"9": { "action": "de.felitendo.voicenux.hearsounds" },
 		"10": { "action": "de.felitendo.voicenux.randomvoice" },
 		"11": { "action": "de.felitendo.voicenux.nextvoice", "settings": { "look": "voice" } },

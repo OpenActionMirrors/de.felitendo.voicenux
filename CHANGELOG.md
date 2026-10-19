@@ -13,6 +13,7 @@ Welcome to Voicenux for OpenDeck `v0.1.0`! Control the Voicenux voice changer fr
 - Voice changer, mute, hear myself, background and hear sounds
 - Push to talk, push to change your voice, or a voice only while you hold its key
 - Random, next and previous voice, out of your favorites if you have some
+- A random sound, with a dice or the sound that comes next on the key
 - Soundboard volume on a key or a dial, and a key to stop all sounds
 - A dial that turns through your voices, with their pictures
 - Most keys do one thing on press, another on hold and another on double press

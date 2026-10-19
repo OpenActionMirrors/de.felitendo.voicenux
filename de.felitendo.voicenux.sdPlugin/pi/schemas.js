@@ -193,6 +193,34 @@ export const SCHEMAS = {
 		help: "Stops all sounds that play. The key is white while one plays.",
 		fields: [],
 	},
+	[`${ID}.randomsound`]: {
+		help: "Plays a random sound, never the same one twice in a row.",
+		fields: [
+			{
+				key: "look",
+				label: "Picture",
+				type: "tiles",
+				section: LOOK,
+				options: [
+					["dice", "Dice"],
+					["next", "Next sound"],
+				],
+				preview: (v, s, page) => {
+					const sound = page.list("sounds")[0];
+					if (v === "dice" || !sound) return glyphKeySvg("random");
+					return pictureKeySvg({ src: page.pictureUrl(sound.icon), title: s.showName === false ? "" : sound.label, titleAt: s.nameAt });
+				},
+			},
+			{ type: "note", text: "Next sound: the key shows the sound that plays when you press it.", showIf: (s) => s.look === "next", section: LOOK },
+			{
+				...titleTiles("Name of the sound", "showName", "nameAt", (at, s, page) => {
+					const sound = page.list("sounds")[0];
+					return pictureKeySvg({ src: sound ? page.pictureUrl(sound.icon) : null, fallback: "sound", title: at ? (sound?.label ?? t("Sound")) : "", titleAt: at || "below" });
+				}),
+				showIf: (s) => s.look === "next",
+			},
+		],
+	},
 	[`${ID}.soundvolume`]: {
 		help: "How loud the sounds play for everyone: for others in the Voicenux Microphone, and for you when Hear sounds myself is on.",
 		fields: [

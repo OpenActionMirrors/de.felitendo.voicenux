@@ -33,6 +33,10 @@
 		"Name": "Sounds stoppen",
 		"Tooltip": "Alle Sounds stoppen, die gerade laufen."
 	},
+	"de.felitendo.voicenux.randomsound": {
+		"Name": "Zufälliger Sound",
+		"Tooltip": "Einen zufälligen Sound vom Soundboard abspielen. Zeigt einen Würfel oder schon den Sound, der als Nächstes läuft."
+	},
 	"de.felitendo.voicenux.background": {
 		"Name": "Hintergrund",
 		"Tooltip": "Hintergrundgeräusche der Stimme, etwa Regen oder eine Menge, an oder aus."

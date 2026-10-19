@@ -49,20 +49,62 @@ export class Sound extends PictureAction {
 		if (!sound) throw new Error(this.settings.sound ? "This sound is gone from Voicenux" : "no sound selected");
 		const op = this.op(args);
 		if (op === "stop") await this.call("stop-sound", sound.id);
-		else await this.playAs(op, sound.id);
+		else await playAs(this, op, sound.id);
+	}
+}
+
+// A random sound. It picks the next one ahead, so the key can show it ("next"), or shows a dice.
+// Never the same sound twice in a row.
+export class RandomSound extends PictureAction {
+	static uuid = `${ID}.randomsound`;
+	// look: "dice", or "next" (the picture of the sound the next press plays).
+	static defaults = { look: "dice", showName: true, nameAt: "below" };
+
+	// The sound the next press plays.
+	next() {
+		if (!this.client.sound(this.nextId)) this.pick();
+		return this.client.sound(this.nextId);
 	}
 
-	// Voicenux 0.1.0 does not know sound-restart, sound-toggle and sound-overlap yet. There a key
-	// plays as the soundboard is set, and only on top can not work.
-	async playAs(mode, id) {
-		try {
-			await this.call(`sound-${mode}`, id);
-		} catch (error) {
-			if (!/unknown action/.test(error.message)) throw error;
-			if (mode === "overlap") throw new Error("Play on top needs a newer Voicenux");
-			if (mode === "toggle" && this.playing()) await this.call("stop-sound", id);
-			else await this.call("sound", id);
-		}
+	pick() {
+		const sounds = this.client.sounds;
+		const others = sounds.length > 1 ? sounds.filter((s) => s.id !== this.lastId) : sounds;
+		this.nextId = others[Math.floor(Math.random() * others.length)]?.id ?? null;
+	}
+
+	renderOffline() {
+		this.glyphForTitle("");
+	}
+
+	render() {
+		const sound = this.next();
+		const { look, showName, nameAt } = this.settings;
+		if (look !== "next" || !sound) return this.glyphForTitle("");
+		const title = showName ? sound.name : "";
+		this.ownTitle(title);
+		this.setImage(pictureKey({ png: this.picture(sound.icon), fallback: "sound", title, titleAt: nameAt }));
+	}
+
+	async onPress() {
+		const sound = this.next();
+		if (!sound) throw new Error("The soundboard has no sounds");
+		this.lastId = sound.id;
+		this.pick();
+		await playAs(this, "restart", sound.id);
+		this.render();
+	}
+}
+
+// Plays a sound in a mode of its own. Voicenux 0.1.0 does not know sound-restart, sound-toggle
+// and sound-overlap yet: there a key plays as the soundboard is set, and only on top can not work.
+async function playAs(action, mode, id) {
+	try {
+		await action.call(`sound-${mode}`, id);
+	} catch (error) {
+		if (!/unknown action/.test(error.message)) throw error;
+		if (mode === "overlap") throw new Error("Play on top needs a newer Voicenux");
+		if (mode === "toggle" && action.client.playing.includes(id)) await action.call("stop-sound", id);
+		else await action.call("sound", id);
 	}
 }
 

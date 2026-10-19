@@ -115,10 +115,9 @@ await test("mute key mutes and unmutes", async () => {
 	await waitFor("unmuted", async () => (await vn()).mute === false);
 });
 
-await test("switch keys flip hear myself, background and hear sounds", async () => {
+await test("switch keys flip hear myself and hear sounds", async () => {
 	for (const [key, field] of [
 		[7, "hear_myself"],
-		[8, "background"],
 		[9, "hear_sounds"],
 	]) {
 		const before = (await vn())[field];
@@ -175,6 +174,17 @@ await test("stop sounds key stops everything and is white while sounds play", as
 	await press(12);
 	await waitFor("nothing plays", async () => (await vn()).playing.length === 0);
 	await waitFor("key 12 gray again", async () => (await keyImage(12)) === idle);
+});
+
+await test("random sound key plays a sound and shows the next one", async () => {
+	await act("stop-sounds");
+	await waitFor("nothing plays", async () => (await vn()).playing.length === 0);
+	await sleep(400);
+	const shown = await keyImage(8);
+	await press(8);
+	await waitFor("a sound plays", async () => (await vn()).playing.length === 1);
+	await waitFor("key 8 shows another sound", async () => (await keyImage(8)) !== shown);
+	await act("stop-sounds");
 });
 
 await test("soundboard volume key turns it down", async () => {

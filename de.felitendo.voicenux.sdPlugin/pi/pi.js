@@ -23,6 +23,9 @@ const page = {
 	get state() {
 		return conn?.voicenux ?? null;
 	},
+	list(name) {
+		return conn?.lists?.[name] ?? [];
+	},
 	find(list, value) {
 		return (conn?.lists?.[list] ?? []).find((item) => item.value === value) ?? null;
 	},
