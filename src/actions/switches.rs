@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde_json::{Map, Value, json};
 
-use super::{Behavior, KeyRc, Kind, PressArgs, defaults};
+use super::{Behavior, Gesture, KeyRc, Kind, Press, defaults};
 use crate::Res;
 use crate::i18n::t;
 use crate::voicenux::State;
@@ -39,8 +39,8 @@ impl Behavior for Switch {
 		k.glyph_for_title(&title, &k.s_str("stateAt"));
 	}
 
-	async fn on_press(&self, k: &KeyRc, args: Option<PressArgs>) -> Res<()> {
-		let op = k.op(&args);
+	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
+		let op = press.op;
 		let arg = match op.as_str() {
 			"holdOn" => "on",
 			"holdOff" => "off",
@@ -55,7 +55,7 @@ impl Behavior for Switch {
 		if k.is_in_multi_action() {
 			return Ok(());
 		}
-		let mode = k.gesture("press");
+		let mode = k.gesture(Gesture::Press);
 		if mode != "holdOn" && mode != "holdOff" {
 			return Ok(());
 		}
@@ -75,10 +75,8 @@ pub static VOICE_CHANGER: Kind = Kind {
 	press_key: "mode",
 	ops: SWITCH_OPS,
 	press_only: HELD,
-	can_repeat: false,
-	required: &[],
 	behavior: &Switch { field: |s| s.voice_changer, api: "voice-changer" },
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 pub static HEAR_MYSELF: Kind = Kind {
@@ -88,10 +86,8 @@ pub static HEAR_MYSELF: Kind = Kind {
 	press_key: "mode",
 	ops: SWITCH_OPS,
 	press_only: HELD,
-	can_repeat: false,
-	required: &[],
 	behavior: &Switch { field: |s| s.hear_myself, api: "hear-myself" },
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 pub static BACKGROUND: Kind = Kind {
@@ -101,10 +97,8 @@ pub static BACKGROUND: Kind = Kind {
 	press_key: "mode",
 	ops: SWITCH_OPS,
 	press_only: HELD,
-	can_repeat: false,
-	required: &[],
 	behavior: &Switch { field: |s| s.background, api: "background" },
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 pub static HEAR_SOUNDS: Kind = Kind {
@@ -114,10 +108,8 @@ pub static HEAR_SOUNDS: Kind = Kind {
 	press_key: "mode",
 	ops: SWITCH_OPS,
 	press_only: HELD,
-	can_repeat: false,
-	required: &[],
 	behavior: &Switch { field: |s| s.hear_sounds, api: "hear-sounds" },
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 // ----- Mutes the microphone. Red when muted. -----
@@ -146,8 +138,8 @@ impl Behavior for Mute {
 		k.glyph_for_title(&title, &k.s_str("stateAt"));
 	}
 
-	async fn on_press(&self, k: &KeyRc, args: Option<PressArgs>) -> Res<()> {
-		match k.op(&args).as_str() {
+	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
+		match press.op.as_str() {
 			"toggle" => {
 				k.call("mute", Some("toggle")).await?;
 			}
@@ -163,7 +155,7 @@ impl Behavior for Mute {
 		if k.is_in_multi_action() {
 			return Ok(());
 		}
-		match k.gesture("press").as_str() {
+		match k.gesture(Gesture::Press).as_str() {
 			"talk" => self.set_muted(k, true).await,
 			"holdMute" => self.set_muted(k, false).await,
 			_ => Ok(()),
@@ -178,10 +170,8 @@ pub static MUTE: Kind = Kind {
 	press_key: "mode",
 	ops: &["toggle", "mute", "unmute", "talk", "holdMute"],
 	press_only: &["talk", "holdMute"],
-	can_repeat: false,
-	required: &[],
 	behavior: &Mute,
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 #[cfg(test)]
@@ -193,16 +183,16 @@ mod tests {
 	async fn switches_and_mute_send_on_off_or_toggle() {
 		local(async {
 			let (_p, changer) = key(&VOICE_CHANGER, json!({ "mode": "off" }));
-			VOICE_CHANGER.behavior.on_press(&changer, None).await.unwrap();
+			changer.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&changer), ["voice-changer", "off"]);
 			let (_p, mute) = key(&MUTE, json!({ "mode": "talk" }));
-			MUTE.behavior.on_press(&mute, None).await.unwrap();
+			mute.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&mute), ["mute", "off"]);
 			MUTE.behavior.on_release(&mute).await.unwrap();
 			assert_eq!(last(&mute), ["mute", "on"]);
 			// Push to talk uses key up, so it has no hold or double press.
 			let (_p, talk) = key(&MUTE, json!({ "mode": "talk", "hold": "mute" }));
-			assert_eq!(talk.gesture("hold"), "none");
+			assert_eq!(talk.gesture(Gesture::Hold), "none");
 		})
 		.await;
 	}
@@ -213,13 +203,13 @@ mod tests {
 			let (_p, k) = key(&VOICE_CHANGER, json!({ "mode": "holdOn", "hold": "off" }));
 			k.client.set_state(|s| s.voice_changer = false);
 			// It uses key down and up, so there is no hold or double press.
-			assert_eq!(k.gesture("hold"), "none");
-			VOICE_CHANGER.behavior.on_press(&k, None).await.unwrap();
+			assert_eq!(k.gesture(Gesture::Hold), "none");
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&k), ["voice-changer", "on"]);
 			VOICE_CHANGER.behavior.on_release(&k).await.unwrap();
 			assert_eq!(last(&k), ["voice-changer", "off"]);
 			let (_p, own) = key(&VOICE_CHANGER, json!({ "mode": "holdOff" }));
-			VOICE_CHANGER.behavior.on_press(&own, None).await.unwrap();
+			own.press(Gesture::Press, false).await.unwrap();
 			VOICE_CHANGER.behavior.on_release(&own).await.unwrap();
 			let calls: Vec<_> = calls(&own).into_iter().map(|(a, arg)| (a, arg.unwrap_or_default())).collect();
 			assert_eq!(calls, [("voice-changer".to_string(), "off".to_string()), ("voice-changer".to_string(), "on".to_string())]);

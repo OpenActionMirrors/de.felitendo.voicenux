@@ -25,7 +25,7 @@
   built like [OBS Tools](https://github.com/FeloDeck/obs-tools): same base, settings pages, icons
   and tools. When something is fixed or improved in one, look if the other needs it too.
 - The plugin is Rust (`src/`) and talks to OpenDeck through the `openaction` crate. It runs on one
-  thread, like the JavaScript version did: every event is a task of its own (tokio `LocalSet`).
+  thread: every event is a task of its own (tokio `LocalSet`).
   Never hold a `RefCell` borrow across an `.await`. Settings come from the settings pages as loose
   JSON: read them with the helpers on `Key` and in `src/js.rs` (truthy, `Number()`, `String()`).
 - `make package` builds for x86_64 and aarch64 with an old glibc (2.28), so it runs on older
@@ -64,7 +64,7 @@
   style.
 - An action that can do more than one thing lists it in `ops` of its `Kind` (the press choice is in
   the setting `press_key`), and its schema uses `gestures()`. Press, hold and double press then
-  offer the same choices, and the base (`src/actions/mod.rs`) does the key handling.
+  offer the same choices, and `src/actions/key/` does the key handling.
 - Settings a key cannot work without go in `required`, so the key shows the setup image (gray
   glyph, yellow dot) until they are set. Errors an action returns show up on its settings page:
   write them as short English sentences and add the German text.

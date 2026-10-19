@@ -148,18 +148,58 @@ pub struct Fake {
 	pub old: bool,
 }
 
-/// Status values:
-///   idle        not started
-///   connecting  waiting for the socket
-///   connected   Voicenux said hello and sent its state, actions work
-///   offline     Voicenux does not run
-///   disabled    Voicenux runs, but "Let other apps control Voicenux" is off
-///   error       anything else, see last_error
+/// How the connection to Voicenux is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Status {
+	/// Not started.
+	Idle,
+	/// Waiting for the socket.
+	Connecting,
+	/// Voicenux said hello and sent its state, actions work.
+	Connected,
+	/// Voicenux does not run.
+	Offline,
+	/// Voicenux runs, but "Let other apps control Voicenux" is off.
+	Disabled,
+	/// Anything else, see last_error.
+	Error,
+}
+
+impl Status {
+	/// The name the settings pages know.
+	pub fn name(self) -> &'static str {
+		match self {
+			Status::Idle => "idle",
+			Status::Connecting => "connecting",
+			Status::Connected => "connected",
+			Status::Offline => "offline",
+			Status::Disabled => "disabled",
+			Status::Error => "error",
+		}
+	}
+
+	/// Voicenux cannot be reached, and it is not just starting.
+	pub fn is_failure(self) -> bool {
+		matches!(self, Status::Offline | Status::Disabled | Status::Error)
+	}
+}
+
+/// What changed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Change {
+	/// Everything: connected, or gone.
+	All,
+	State,
+	Voices,
+	Sounds,
+	Playing,
+}
+
 pub struct VoicenuxClient {
 	pub host: String,
 	pub port: u16,
 	running: Box<dyn Fn() -> bool>,
-	status: RefCell<String>,
+	status: Cell<Status>,
 	last_error: RefCell<String>,
 	version: RefCell<Value>,
 	api: Cell<Option<f64>>,
@@ -173,9 +213,8 @@ pub struct VoicenuxClient {
 	stopped: Cell<bool>,
 	me: Weak<VoicenuxClient>,
 	/// (status, error)
-	pub on_status: Emitter<(String, String)>,
-	/// What changed: "all" (connected or gone), "state", "voices", "sounds" or "playing".
-	pub on_change: Emitter<str>,
+	pub on_status: Emitter<(Status, String)>,
+	pub on_change: Emitter<Change>,
 	#[cfg(test)]
 	pub fake: RefCell<Option<Fake>>,
 }
@@ -190,7 +229,7 @@ impl VoicenuxClient {
 			host: host.to_string(),
 			port,
 			running,
-			status: RefCell::new("idle".into()),
+			status: Cell::new(Status::Idle),
 			last_error: RefCell::new(String::new()),
 			version: RefCell::new(Value::Null),
 			api: Cell::new(None),
@@ -210,8 +249,8 @@ impl VoicenuxClient {
 		})
 	}
 
-	pub fn status(&self) -> String {
-		self.status.borrow().clone()
+	pub fn status(&self) -> Status {
+		self.status.get()
 	}
 
 	pub fn last_error(&self) -> String {
@@ -224,7 +263,7 @@ impl VoicenuxClient {
 	}
 
 	pub fn connected(&self) -> bool {
-		*self.status.borrow() == "connected"
+		self.status.get() == Status::Connected
 	}
 
 	/// Ready for keys: connected and the first state is in.
@@ -276,7 +315,7 @@ impl VoicenuxClient {
 		self.clear_retry();
 		self.drop_socket();
 		self.cleanup("stopped");
-		self.set_status("idle", "");
+		self.set_status(Status::Idle, "");
 	}
 
 	/// Try again now, for example after the user turned the API on.
@@ -309,12 +348,12 @@ impl VoicenuxClient {
 		}
 	}
 
-	fn set_status(&self, status: &str, error: &str) {
-		let changed = *self.status.borrow() != status || *self.last_error.borrow() != error;
-		*self.status.borrow_mut() = status.to_string();
+	fn set_status(&self, status: Status, error: &str) {
+		let changed = self.status.get() != status || *self.last_error.borrow() != error;
+		self.status.set(status);
 		*self.last_error.borrow_mut() = error.to_string();
 		if changed {
-			self.on_status.emit(&(status.to_string(), error.to_string()));
+			self.on_status.emit(&(status, error.to_string()));
 		}
 	}
 
@@ -328,8 +367,8 @@ impl VoicenuxClient {
 		}
 		let Some(me) = self.me.upgrade() else { return };
 		// While retrying, keep showing why the last try failed.
-		if !matches!(self.status.borrow().as_str(), "offline" | "disabled" | "error") {
-			self.set_status("connecting", "");
+		if !self.status.get().is_failure() {
+			self.set_status(Status::Connecting, "");
 		}
 		let serial = self.serial.get() + 1;
 		self.serial.set(serial);
@@ -345,7 +384,7 @@ impl VoicenuxClient {
 			if me.is_current(serial) && !greeted.get() {
 				me.drop_socket();
 				me.cleanup("no hello");
-				me.set_status("error", &format!("Something else uses port {}", me.port));
+				me.set_status(Status::Error, &format!("Something else uses port {}", me.port));
 				me.schedule_retry();
 			}
 		});
@@ -392,34 +431,34 @@ impl VoicenuxClient {
 					}
 				}
 				if self.connected() {
-					self.on_change.emit("state");
+					self.on_change.emit(&Change::State);
 					return;
 				}
 				match self.api.get() {
 					Some(api) if api > API => self.set_status(
-						"connected",
+						Status::Connected,
 						&format!("Voicenux speaks API {}, this plugin {}. Update the plugin.", js::fmt(api), js::fmt(API)),
 					),
-					_ => self.set_status("connected", ""),
+					_ => self.set_status(Status::Connected, ""),
 				}
-				self.on_change.emit("all");
+				self.on_change.emit(&Change::All);
 			}
 			"voices" => {
 				self.data.borrow_mut().voices = list(data, Voice::from_json);
 				if self.connected() {
-					self.on_change.emit("voices");
+					self.on_change.emit(&Change::Voices);
 				}
 			}
 			"sounds" => {
 				self.data.borrow_mut().sounds = list(data, Sound::from_json);
 				if self.connected() {
-					self.on_change.emit("sounds");
+					self.on_change.emit(&Change::Sounds);
 				}
 			}
 			"playing" => {
 				self.data.borrow_mut().playing = list(data, |p| js::to_string(Some(p)));
 				if self.connected() {
-					self.on_change.emit("playing");
+					self.on_change.emit(&Change::Playing);
 				}
 			}
 			_ => {}
@@ -436,14 +475,14 @@ impl VoicenuxClient {
 		self.reset();
 		if (self.running)() {
 			self.set_status(
-				"disabled",
+				Status::Disabled,
 				if was_connected { "Voicenux closed the connection" } else { "Other apps may not control Voicenux" },
 			);
 		} else {
-			self.set_status("offline", "Voicenux is not running");
+			self.set_status(Status::Offline, "Voicenux is not running");
 		}
 		if was_connected {
-			self.on_change.emit("all");
+			self.on_change.emit(&Change::All);
 		}
 		self.schedule_retry();
 	}
@@ -490,7 +529,7 @@ impl VoicenuxClient {
 			message["arg"] = arg.into();
 		}
 		let _ = socket.tx.send(Message::Text(js::stringify(&message).into()));
-		// The time starts now, like the setTimeout of the JavaScript version.
+		// The time starts now, not when the reply is first awaited.
 		let deadline = tokio::time::Instant::now() + Duration::from_secs_f64(CALL_TIMEOUT / 1000.0);
 		let me = self.me.clone();
 		Box::pin(async move {
@@ -612,7 +651,7 @@ impl VoicenuxClient {
 	#[cfg(test)]
 	pub fn fake_connected(&self, state: State, voices: Vec<Voice>, sounds: Vec<Sound>) {
 		*self.fake.borrow_mut() = Some(Fake::default());
-		*self.status.borrow_mut() = "connected".into();
+		self.status.set(Status::Connected);
 		let mut data = self.data.borrow_mut();
 		data.state = Some(state);
 		data.voices = voices;
@@ -681,18 +720,18 @@ mod tests {
 	#[test]
 	fn connected_once_the_first_state_is_in() {
 		let client = VoicenuxClient::with("127.0.0.1", PORT, Box::new(|| false));
-		let changes = Rc::new(RefCell::new(Vec::<String>::new()));
+		let changes = Rc::new(RefCell::new(Vec::new()));
 		let seen = changes.clone();
-		client.on_change.on(move |what| seen.borrow_mut().push(what.to_string()));
+		client.on_change.on(move |change| seen.borrow_mut().push(*change));
 		client.on_event("hello", &json!({ "app": "voicenux", "version": "0.1.0", "api": 1 }));
 		assert!(!client.connected());
 		client.on_event("state", &json!({ "voice": { "id": "robot" }, "playing": [] }));
-		assert_eq!(client.status(), "connected");
+		assert_eq!(client.status(), Status::Connected);
 		client.on_event("voices", &json!([{ "id": "deep", "name": "Deep", "icon": "bear", "favorite": true }]));
 		client.on_event("playing", &json!(["airhorn"]));
 		assert_eq!(client.playing(), ["airhorn"]);
 		assert_eq!(client.voice("deep").map(|v| v.name), Some("Deep".to_string()));
-		assert_eq!(*changes.borrow(), ["all", "voices", "playing"]);
+		assert_eq!(*changes.borrow(), [Change::All, Change::Voices, Change::Playing]);
 	}
 
 	#[test]

@@ -3,12 +3,12 @@ use std::hash::{BuildHasher, Hasher};
 use async_trait::async_trait;
 use serde_json::json;
 
-use super::{Behavior, KeyRc, Kind, PressArgs, defaults};
+use super::{Behavior, Gesture, KeyRc, Kind, Press, defaults};
 use crate::i18n::t;
 use crate::icons::{colors, volume_glyph};
 use crate::js::{self, fmt};
 use crate::render::{Frame, GlyphKey, PictureKey, dial_icon, glyph_key, picture_key};
-use crate::voicenux::Sound as SoundInfo;
+use crate::voicenux::{Change, Sound as SoundInfo};
 use crate::{Error, Res};
 
 // 0 to 100, like Math.max(0, Math.min(100, Math.round(Number(value) || 0))).
@@ -83,11 +83,11 @@ impl Behavior for Sound {
 		}));
 	}
 
-	async fn on_press(&self, k: &KeyRc, args: Option<PressArgs>) -> Res<()> {
+	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
 		let Some(sound) = self.sound(k) else {
 			return Err(Error::from(if k.s_truthy("sound") { "This sound is gone from Voicenux" } else { "no sound selected" }));
 		};
-		match k.op(&args).as_str() {
+		match press.op.as_str() {
 			"stop" => k.call("stop-sound", Some(&sound.id)).await.map(|_| ()),
 			op => play_as(k, op, &sound.id).await,
 		}
@@ -104,11 +104,9 @@ pub static SOUND: Kind = Kind {
 	},
 	press_key: "press",
 	ops: &["restart", "toggle", "overlap", "stop"],
-	press_only: &[],
-	can_repeat: false,
 	required: &["sound"],
 	behavior: &Sound,
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 // ----- A random sound. It picks the next one ahead, so the key can show it ("next"), or shows a -----
@@ -126,18 +124,18 @@ struct RandomSound;
 impl RandomSound {
 	// The sound the next press plays.
 	fn next(&self, k: &KeyRc) -> Option<SoundInfo> {
-		let next = k.x::<RandomPick>().next.clone();
+		let next = k.own::<RandomPick>().next.clone();
 		if let Some(sound) = next.and_then(|id| k.client.sound(&id)) {
 			return Some(sound);
 		}
 		self.pick(k);
-		let next = k.x::<RandomPick>().next.clone();
+		let next = k.own::<RandomPick>().next.clone();
 		next.and_then(|id| k.client.sound(&id))
 	}
 
 	fn pick(&self, k: &KeyRc) {
 		let sounds = k.client.sounds();
-		let mut x = k.x::<RandomPick>();
+		let mut x = k.own::<RandomPick>();
 		let others: Vec<&SoundInfo> =
 			if sounds.len() > 1 { sounds.iter().filter(|s| Some(&s.id) != x.last.as_ref()).collect() } else { sounds.iter().collect() };
 		x.next = if others.is_empty() { None } else { Some(others[(random() * others.len() as f64) as usize % others.len()].id.clone()) };
@@ -165,9 +163,9 @@ impl Behavior for RandomSound {
 		}));
 	}
 
-	async fn on_press(&self, k: &KeyRc, _args: Option<PressArgs>) -> Res<()> {
+	async fn on_press(&self, k: &KeyRc, _press: Press) -> Res<()> {
 		let sound = self.next(k).ok_or("The soundboard has no sounds")?;
-		k.x::<RandomPick>().last = Some(sound.id.clone());
+		k.own::<RandomPick>().last = Some(sound.id.clone());
 		self.pick(k);
 		play_as(k, "restart", &sound.id).await?;
 		self.render(k);
@@ -179,13 +177,9 @@ pub static RANDOM_SOUND: Kind = Kind {
 	uuid: "de.felitendo.voicenux.randomsound",
 	name: "RandomSound",
 	defaults: || defaults(json!({ "look": "dice", "showName": true, "nameAt": "below" })),
-	press_key: "",
-	ops: &[],
-	press_only: &[],
-	can_repeat: false,
-	required: &[],
 	behavior: &RandomSound,
 	new_state: || Box::new(RandomPick::default()),
+	..Kind::BASE
 };
 
 // ----- Stops every sound. White while something plays. -----
@@ -202,7 +196,7 @@ impl Behavior for StopSounds {
 		k.set_state(u16::from(!k.client.playing().is_empty()));
 	}
 
-	async fn on_press(&self, k: &KeyRc, _args: Option<PressArgs>) -> Res<()> {
+	async fn on_press(&self, k: &KeyRc, _press: Press) -> Res<()> {
 		k.call("stop-sounds", None).await.map(|_| ())
 	}
 }
@@ -211,13 +205,8 @@ pub static STOP_SOUNDS: Kind = Kind {
 	uuid: "de.felitendo.voicenux.stopsounds",
 	name: "StopSounds",
 	defaults: || defaults(json!({})),
-	press_key: "",
-	ops: &[],
-	press_only: &[],
-	can_repeat: false,
-	required: &[],
 	behavior: &StopSounds,
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 // ----- Volume of the soundboard: up, down or to a value. Hold keeps going by default. -----
@@ -226,14 +215,14 @@ struct SoundVolume;
 
 impl SoundVolume {
 	fn glyph_name(&self, k: &KeyRc) -> &'static str {
-		volume_glyph(&k.gesture("press")).unwrap_or("volume")
+		volume_glyph(&k.gesture(Gesture::Press)).unwrap_or("volume")
 	}
 }
 
 #[async_trait(?Send)]
 impl Behavior for SoundVolume {
-	fn on_change(&self, k: &KeyRc, what: &str) {
-		if what == "state" {
+	fn on_change(&self, k: &KeyRc, change: Change) {
+		if change == Change::State {
 			self.render(k);
 		}
 	}
@@ -251,11 +240,11 @@ impl Behavior for SoundVolume {
 		k.set_image(&glyph_key(self.glyph_name(k), &GlyphKey { title: &title, title_at: &k.s_str("valueAt"), ..Default::default() }));
 	}
 
-	async fn on_press(&self, k: &KeyRc, args: Option<PressArgs>) -> Res<()> {
-		let mode = k.op(&args);
+	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
+		let mode = press.op;
 		let now = k.vn().sound_volume.unwrap_or(0.0);
 		if mode == "set" {
-			if !args.is_some_and(|a| a.repeat) {
+			if !press.repeat {
 				k.call("sound-volume", Some(&fmt(clamp(k.s_num("value"))))).await?;
 			}
 		} else {
@@ -280,11 +269,9 @@ pub static SOUND_VOLUME: Kind = Kind {
 	},
 	press_key: "mode",
 	ops: &["up", "down", "set"],
-	press_only: &[],
 	can_repeat: true,
-	required: &[],
 	behavior: &SoundVolume,
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 // ----- Stream Deck + dial: turn for the soundboard volume, press or touch to stop all sounds. -----
@@ -343,13 +330,8 @@ pub static SOUND_VOLUME_DIAL: Kind = Kind {
 	uuid: "de.felitendo.voicenux.soundvolumedial",
 	name: "SoundVolumeDial",
 	defaults: || defaults(json!({ "step": 5, "pressAction": "stop", "disableTouch": false })),
-	press_key: "",
-	ops: &[],
-	press_only: &[],
-	can_repeat: false,
-	required: &[],
 	behavior: &SoundVolumeDial,
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 #[cfg(test)]
@@ -357,25 +339,25 @@ mod tests {
 	use super::*;
 	use crate::actions::testing::*;
 
-	fn args(op: &str) -> Option<PressArgs> {
-		Some(PressArgs { op: op.into(), gesture: "press".into(), repeat: false })
+	fn args(op: &str) -> Press {
+		Press { op: op.into(), repeat: false }
 	}
 
 	#[tokio::test]
 	async fn a_sound_key_plays_in_its_own_mode_also_with_an_older_voicenux() {
 		local(async {
 			let (_p, k) = key(&SOUND, json!({ "sound": "airhorn", "press": "overlap" }));
-			Sound.on_press(&k, None).await.unwrap();
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&k), ["sound-overlap", "airhorn"]);
 			Sound.on_press(&k, args("stop")).await.unwrap();
 			assert_eq!(last(&k), ["stop-sound", "airhorn"]);
 			// Voicenux 0.1.0 knows only "sound": toggle and restart still work, on top can not.
 			let (_p, old) = key(&SOUND, json!({ "sound": "airhorn", "press": "toggle" }));
 			old_voicenux(&old);
-			Sound.on_press(&old, None).await.unwrap();
+			old.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&old), ["sound", "airhorn"]);
 			old.client.set_playing(vec!["airhorn".into()]);
-			Sound.on_press(&old, None).await.unwrap();
+			old.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&old), ["stop-sound", "airhorn"]);
 			assert_eq!(Sound.on_press(&old, args("overlap")).await, Err(Error::from("Play on top needs a newer Voicenux")));
 		})
@@ -386,7 +368,7 @@ mod tests {
 	async fn a_key_without_its_sound_says_why() {
 		local(async {
 			let (_p, k) = key(&SOUND, json!({ "sound": "" }));
-			assert_eq!(Sound.on_press(&k, None).await, Err(Error::from("no sound selected")));
+			assert_eq!(k.press(Gesture::Press, false).await, Err(Error::from("no sound selected")));
 		})
 		.await;
 	}
@@ -402,12 +384,12 @@ mod tests {
 			]);
 			for _ in 0..20 {
 				let shown = RandomSound.next(&k).map(|s| s.id).unwrap_or_default();
-				RandomSound.on_press(&k, None).await.unwrap();
+				k.press(Gesture::Press, false).await.unwrap();
 				assert_eq!(last(&k), ["sound-restart".to_string(), shown.clone()]);
 				assert_ne!(RandomSound.next(&k).map(|s| s.id), Some(shown), "the same sound twice in a row");
 			}
 			k.client.set_sounds(Vec::new());
-			assert_eq!(RandomSound.on_press(&k, None).await, Err(Error::from("The soundboard has no sounds")));
+			assert_eq!(k.press(Gesture::Press, false).await, Err(Error::from("The soundboard has no sounds")));
 		})
 		.await;
 	}
@@ -416,13 +398,13 @@ mod tests {
 	async fn soundboard_volume_stays_between_0_and_100() {
 		local(async {
 			let (_p, k) = key(&SOUND_VOLUME, json!({ "step": 15 }));
-			assert_eq!(k.gesture("hold"), "repeat");
-			SoundVolume.on_press(&k, None).await.unwrap();
+			assert_eq!(k.gesture(Gesture::Hold), "repeat");
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&k), ["sound-volume", "95"]);
-			SoundVolume.on_press(&k, None).await.unwrap();
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&k), ["sound-volume", "100"]);
 			let count = calls(&k).len();
-			SoundVolume.on_press(&k, None).await.unwrap();
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(calls(&k).len(), count, "no call when it is at 100 already");
 			SoundVolume.on_press(&k, args("set")).await.unwrap();
 			assert_eq!(last(&k), ["sound-volume", "50"]);

@@ -2,11 +2,12 @@ use async_trait::async_trait;
 use serde_json::json;
 use tokio::task::spawn_local;
 
-use super::{Behavior, KeyRc, Kind, PressArgs, defaults};
+use super::{Behavior, Gesture, KeyRc, Kind, Press, defaults};
 use crate::i18n::t;
 use crate::icons::colors;
 use crate::render::{Frame, GlyphKey, PictureKey, dial_picture, glyph_key, picture_key};
 use crate::timers::Timer;
+use crate::voicenux::Change;
 use crate::voicenux::Voice as VoiceInfo;
 use crate::{Error, Res};
 
@@ -56,15 +57,15 @@ impl Behavior for Voice {
 		k.set_image(&picture_key(&PictureKey { png: png.as_deref(), title: &title, title_at: &name_at, frame, ..Default::default() }));
 	}
 
-	async fn on_press(&self, k: &KeyRc, args: Option<PressArgs>) -> Res<()> {
+	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
 		let Some(voice) = self.voice(k) else {
 			return Err(Error::from(if k.s_truthy("voice") { "This voice is gone from Voicenux" } else { "no voice selected" }));
 		};
-		let op = k.op(&args);
+		let op = press.op;
 		let vn = k.vn();
 		let multi = k.is_in_multi_action();
 		if op == "whileHeld" && !multi {
-			k.x::<VoiceState>().before = Some((vn.voice_id().map(String::from), vn.voice_changer));
+			k.own::<VoiceState>().before = Some((vn.voice_id().map(String::from), vn.voice_changer));
 		}
 		if op == "favorite" {
 			k.call("favorite", Some(&voice.id)).await?;
@@ -79,9 +80,9 @@ impl Behavior for Voice {
 	}
 
 	async fn on_release(&self, k: &KeyRc) -> Res<()> {
-		let before = k.x::<VoiceState>().before.take();
+		let before = k.own::<VoiceState>().before.take();
 		let Some((id, on)) = before else { return Ok(()) };
-		if k.gesture("press") != "whileHeld" {
+		if k.gesture(Gesture::Press) != "whileHeld" {
 			return Ok(());
 		}
 		if let Some(id) = id.filter(|id| !id.is_empty() && k.vn().voice_id() != Some(id.as_str())) {
@@ -106,10 +107,10 @@ pub static VOICE: Kind = Kind {
 	press_key: "press",
 	ops: &["toggle", "use", "whileHeld", "favorite"],
 	press_only: &["whileHeld"],
-	can_repeat: false,
 	required: &["voice"],
 	behavior: &Voice,
 	new_state: || Box::new(VoiceState::default()),
+	..Kind::BASE
 };
 
 // ----- Next, previous or a random voice. Can show the voice in use. -----
@@ -118,7 +119,7 @@ struct Step;
 
 impl Step {
 	fn glyph_name(&self, k: &KeyRc) -> &'static str {
-		match k.gesture("press").as_str() {
+		match k.gesture(Gesture::Press).as_str() {
 			"previous" => "previous",
 			"random" => "random",
 			_ => "next",
@@ -155,8 +156,8 @@ impl Behavior for Step {
 		}
 	}
 
-	async fn on_press(&self, k: &KeyRc, args: Option<PressArgs>) -> Res<()> {
-		let action = match k.op(&args).as_str() {
+	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
+		let action = match press.op.as_str() {
 			"random" => "random-voice",
 			"previous" => "previous-voice",
 			_ => "next-voice",
@@ -175,11 +176,8 @@ pub static NEXT_VOICE: Kind = Kind {
 	},
 	press_key: "direction",
 	ops: &["next", "previous", "random"],
-	press_only: &[],
-	can_repeat: false,
-	required: &[],
 	behavior: &Step,
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 pub static RANDOM_VOICE: Kind = Kind {
@@ -190,11 +188,8 @@ pub static RANDOM_VOICE: Kind = Kind {
 	},
 	press_key: "direction",
 	ops: &["random", "next", "previous"],
-	press_only: &[],
-	can_repeat: false,
-	required: &[],
 	behavior: &Step,
-	new_state: || Box::new(()),
+	..Kind::BASE
 };
 
 // ----- Stream Deck + dial: turn to pick a voice (with its picture), press to use it. -----
@@ -209,7 +204,7 @@ struct DialState {
 }
 
 fn dial(k: &KeyRc) -> std::cell::RefMut<'_, DialState> {
-	k.x::<DialState>()
+	k.own::<DialState>()
 }
 
 fn clear(timer: Option<Timer>) {
@@ -256,8 +251,8 @@ impl Behavior for VoiceDial {
 		Some("layouts/voice-dial.json")
 	}
 
-	fn on_change(&self, k: &KeyRc, what: &str) {
-		if what == "voices" {
+	fn on_change(&self, k: &KeyRc, change: Change) {
+		if change == Change::Voices {
 			let selected = dial(k).selected.clone();
 			if selected.is_some_and(|id| k.client.voice(&id).is_none()) {
 				dial(k).selected = None;
@@ -352,13 +347,9 @@ pub static VOICE_DIAL: Kind = Kind {
 	uuid: "de.felitendo.voicenux.voicedial",
 	name: "VoiceDial",
 	defaults: || defaults(json!({ "list": "all", "mode": "pick", "disableTouch": false })),
-	press_key: "",
-	ops: &[],
-	press_only: &[],
-	can_repeat: false,
-	required: &[],
 	behavior: &VoiceDial,
 	new_state: || Box::new(DialState::default()),
+	..Kind::BASE
 };
 
 #[cfg(test)]
@@ -370,14 +361,13 @@ mod tests {
 	async fn a_voice_key_uses_its_voice_or_goes_back_to_your_own_voice() {
 		local(async {
 			let (_p, k) = key(&VOICE, json!({ "voice": "deep", "press": "toggle" }));
-			Voice.on_press(&k, None).await.unwrap();
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&k), ["voice", "deep"]);
-			Voice.on_press(&k, None).await.unwrap();
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&k), ["voice-changer", "off"]);
-			Voice.on_press(&k, None).await.unwrap();
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&k), ["voice", "deep"]);
-			let favorite = PressArgs { op: "favorite".into(), gesture: "press".into(), repeat: false };
-			Voice.on_press(&k, Some(favorite)).await.unwrap();
+			Voice.on_press(&k, Press { op: "favorite".into(), repeat: false }).await.unwrap();
 			assert_eq!(last(&k), ["favorite", "deep"]);
 		})
 		.await;
@@ -387,7 +377,7 @@ mod tests {
 	async fn a_key_without_its_voice_says_why() {
 		local(async {
 			let (_p, k) = key(&VOICE, json!({ "voice": "gone" }));
-			assert_eq!(Voice.on_press(&k, None).await, Err(Error::from("This voice is gone from Voicenux")));
+			assert_eq!(k.press(Gesture::Press, false).await, Err(Error::from("This voice is gone from Voicenux")));
 		})
 		.await;
 	}
@@ -395,10 +385,10 @@ mod tests {
 	#[tokio::test]
 	async fn gestures_fall_back_to_the_first_choice() {
 		local(async {
-			assert_eq!(key(&VOICE, json!({})).1.gesture("press"), "toggle");
-			assert_eq!(key(&VOICE, json!({ "press": "nope" })).1.gesture("press"), "toggle");
-			assert_eq!(key(&VOICE, json!({ "hold": "favorite" })).1.gesture("hold"), "favorite");
-			assert_eq!(key(&RANDOM_VOICE, json!({})).1.gesture("press"), "random");
+			assert_eq!(key(&VOICE, json!({})).1.gesture(Gesture::Press), "toggle");
+			assert_eq!(key(&VOICE, json!({ "press": "nope" })).1.gesture(Gesture::Press), "toggle");
+			assert_eq!(key(&VOICE, json!({ "hold": "favorite" })).1.gesture(Gesture::Hold), "favorite");
+			assert_eq!(key(&RANDOM_VOICE, json!({})).1.gesture(Gesture::Press), "random");
 		})
 		.await;
 	}
@@ -408,14 +398,14 @@ mod tests {
 		local(async {
 			let (_p, k) = key(&VOICE, json!({ "voice": "deep", "press": "whileHeld" }));
 			k.client.set_state(|s| s.voice_changer = false);
-			Voice.on_press(&k, None).await.unwrap();
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(last(&k), ["voice", "deep"]);
 			Voice.on_release(&k).await.unwrap();
 			let tail: Vec<_> = calls(&k).into_iter().skip(1).collect();
 			assert_eq!(tail, [("voice".into(), Some("robot".into())), ("voice-changer".into(), Some("off".into()))]);
 			// A short press of another kind of voice key leaves the voice as it is.
 			let (_p, other) = key(&VOICE, json!({ "voice": "deep", "press": "use" }));
-			Voice.on_press(&other, None).await.unwrap();
+			other.press(Gesture::Press, false).await.unwrap();
 			Voice.on_release(&other).await.unwrap();
 			assert_eq!(calls(&other), [("voice".into(), Some("deep".into()))]);
 		})
@@ -426,7 +416,7 @@ mod tests {
 	async fn next_voice_asks_voicenux_for_the_previous_one() {
 		local(async {
 			let (_p, k) = key(&NEXT_VOICE, json!({ "direction": "previous" }));
-			Step.on_press(&k, None).await.unwrap();
+			k.press(Gesture::Press, false).await.unwrap();
 			assert_eq!(calls(&k), [("previous-voice".into(), None)]);
 		})
 		.await;

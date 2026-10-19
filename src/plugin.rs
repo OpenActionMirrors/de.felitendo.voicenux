@@ -6,26 +6,39 @@ use std::rc::{Rc, Weak};
 use serde_json::{Value, json};
 use tokio::task::spawn_local;
 
-use crate::actions::{Appearance, Key, KeyRc, Kind};
+use crate::actions::{Appearance, Controller, Key, KeyRc, Kind};
 use crate::desktop::{installed, open_voicenux};
 use crate::js::{self, truthy};
 use crate::sd::Sd;
-use crate::voicenux::{PORT, VoicenuxClient};
+use crate::voicenux::{Change, PORT, VoicenuxClient};
+
+/// What happened to a key.
+#[derive(Debug, Clone)]
+pub enum EventKind {
+	WillAppear,
+	WillDisappear,
+	KeyDown,
+	KeyUp,
+	DialRotate(f64),
+	DialDown,
+	TouchTap,
+	DidReceiveSettings,
+	InspectorDidAppear,
+	InspectorDidDisappear,
+	/// A message of the settings page.
+	SendToPlugin(Value),
+}
 
 /// An event from OpenDeck for one key.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Event {
-	/// "willAppear", "keyDown", "sendToPlugin", ...
-	pub event: String,
+	pub kind: EventKind,
 	pub action: String,
 	pub context: String,
-	pub controller: Option<String>,
+	pub controller: Option<Controller>,
 	pub is_in_multi_action: bool,
 	pub state: Option<u16>,
 	pub settings: Option<Value>,
-	pub ticks: f64,
-	/// The message of the settings page (sendToPlugin).
-	pub payload: Value,
 }
 
 pub struct Plugin {
@@ -59,13 +72,14 @@ impl Plugin {
 			let me = me.clone();
 			move |(status, error)| {
 				let Some(plugin) = me.upgrade() else { return };
+				let status = status.name();
 				plugin.sd.log(&if error.is_empty() { format!("Voicenux {status}") } else { format!("Voicenux {status}: {error}") });
 				plugin.broadcast_state();
 			}
 		});
 		// Lists on the settings pages follow Voicenux.
-		plugin.client.on_change.on(move |what| {
-			if what != "playing"
+		plugin.client.on_change.on(move |change| {
+			if *change != Change::Playing
 				&& let Some(plugin) = me.upgrade()
 			{
 				plugin.broadcast_state();
@@ -84,20 +98,15 @@ impl Plugin {
 		}
 		let kind = self.kinds.get(e.action.as_str())?;
 		let plugin = self.me.upgrade()?;
-		let appearance = if e.event == "sendToPlugin" {
+		let appearance = if matches!(e.kind, EventKind::SendToPlugin(_)) {
 			Appearance::default()
 		} else {
-			Appearance {
-				controller: e.controller.clone(),
-				is_in_multi_action: e.is_in_multi_action,
-				state: e.state,
-				settings: e.settings.clone(),
-			}
+			Appearance { controller: e.controller, is_in_multi_action: e.is_in_multi_action, state: e.state, settings: e.settings.clone() }
 		};
-		let instance = Key::new(&plugin, kind, &e.context, &e.action, &appearance);
+		let instance = Key::new(&plugin, kind, &e.context, &appearance);
 		self.instances.borrow_mut().insert(e.context.clone(), instance.clone());
 		// Multi action children never get willAppear, they only press.
-		if e.event != "willAppear" {
+		if !matches!(e.kind, EventKind::WillAppear) {
 			instance.attach();
 		}
 		Some(instance)
@@ -120,52 +129,56 @@ impl Plugin {
 	}
 
 	pub async fn on_message(self: Rc<Self>, e: Event) {
-		match e.event.as_str() {
-			"willAppear" => {
+		match &e.kind {
+			EventKind::WillAppear => {
 				if let Some(instance) = self.instance_for(&e) {
-					instance.appear(e.controller.as_deref(), e.state);
+					instance.appear(e.controller, e.state);
 				}
 			}
-			"willDisappear" => {
+			EventKind::WillDisappear => {
 				let instance = self.instances.borrow_mut().remove(&e.context);
 				if let Some(instance) = instance {
 					instance.disappear();
 				}
 			}
-			"keyDown" => {
+			EventKind::KeyDown => {
 				if let Some(instance) = self.with_settings(&e) {
 					instance.key_down(e.is_in_multi_action).await;
 				}
 			}
-			"keyUp" => {
+			EventKind::KeyUp => {
 				if let Some(instance) = self.with_settings(&e) {
 					instance.key_up().await;
 				}
 			}
-			"dialRotate" => {
+			EventKind::DialRotate(ticks) => {
 				if let Some(instance) = self.with_settings(&e) {
-					instance.dial_rotate(e.ticks).await;
+					instance.dial_rotate(*ticks).await;
 				}
 			}
-			"dialDown" | "touchTap" => {
+			EventKind::DialDown => {
 				if let Some(instance) = self.with_settings(&e) {
-					instance.dial_event(&e.event).await;
+					instance.dial_down().await;
 				}
 			}
-			"didReceiveSettings" => {
+			EventKind::TouchTap => {
+				if let Some(instance) = self.with_settings(&e) {
+					instance.touch_tap().await;
+				}
+			}
+			EventKind::DidReceiveSettings => {
 				if let Some(instance) = self.instance_for(&e) {
 					instance.update_settings(e.settings.as_ref());
 				}
 			}
-			"propertyInspectorDidAppear" => {
+			EventKind::InspectorDidAppear => {
 				self.add_inspector(&e.context);
 				self.send_state(&e.context);
 			}
-			"propertyInspectorDidDisappear" => {
+			EventKind::InspectorDidDisappear => {
 				self.open_inspectors.borrow_mut().retain(|c| *c != e.context);
 			}
-			"sendToPlugin" => self.on_inspector_message(e),
-			_ => {}
+			EventKind::SendToPlugin(payload) => self.on_inspector_message(&e, payload),
 		}
 	}
 
@@ -195,7 +208,7 @@ impl Plugin {
 		json!({
 			"type": "state",
 			"connection": {
-				"status": client.status(),
+				"status": client.status().name(),
 				"error": client.last_error(),
 				"version": client.version(),
 				"port": PORT,
@@ -227,10 +240,10 @@ impl Plugin {
 		}
 	}
 
-	fn on_inspector_message(&self, e: Event) {
+	fn on_inspector_message(&self, e: &Event, payload: &Value) {
 		let context = e.context.clone();
-		let payload = if e.payload.is_object() { e.payload.clone() } else { json!({}) };
-		self.instance_for(&e);
+		let payload = if payload.is_object() { payload.clone() } else { json!({}) };
+		self.instance_for(e);
 		self.add_inspector(&context);
 		let reply = |data: Value| {
 			let mut data = js::object(Some(&data));
@@ -264,7 +277,7 @@ impl Plugin {
 	}
 }
 
-/// Starts the handling of an event, without waiting for it, like the JavaScript version.
+/// Starts the handling of an event as a task of its own, without waiting for it.
 pub fn dispatch(plugin: &Rc<Plugin>, event: Event) {
 	spawn_local(plugin.clone().on_message(event));
 }

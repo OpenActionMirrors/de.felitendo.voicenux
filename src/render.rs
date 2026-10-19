@@ -7,6 +7,7 @@ use base64::Engine;
 use crate::i18n::t;
 use crate::icons::{GlyphOpts, colors, escape_xml, glyph, glyph_height};
 use crate::js::{fmt, max, min, round};
+use crate::voicenux::Status;
 
 pub const SIZE: f64 = 144.0;
 const FONT: &str = "'Inter','Noto Sans','DejaVu Sans','Liberation Sans',sans-serif";
@@ -43,7 +44,7 @@ fn text(value: &str, y: f64, size: f64, color: &str) -> String {
 	)
 }
 
-/// Length as JavaScript counts it, in UTF-16 units.
+/// Length as pi/lib/render.js counts it, in UTF-16 units.
 fn js_len(text: &str) -> usize {
 	text.encode_utf16().count()
 }
@@ -72,7 +73,7 @@ pub fn title_line(value: &str, width: f64) -> TitleLine {
 	let size = max(15.0, min(22.0, (width / (max(1.0, js_len(&line) as f64) * per_char)).floor()));
 	let fits = (width / (size * per_char)).floor();
 	if js_len(&line) as f64 > fits {
-		// Cut like String.slice: by UTF-16 units. Half an emoji becomes U+FFFD, as in the JS version.
+		// Cut by UTF-16 units, like pi/lib/render.js. Half an emoji becomes U+FFFD there too.
 		let units: Vec<u16> = line.encode_utf16().take(max(1.0, fits - 1.0) as usize).collect();
 		let start = String::from_utf16_lossy(&units);
 		line = format!("{}…", start.trim_end_matches(crate::js::is_js_space));
@@ -216,17 +217,17 @@ pub fn picture_key(o: &PictureKey) -> String {
 }
 
 /// Why Voicenux cannot be reached, in a word or two. Keys show it with a glyph, dials as text.
-pub fn status_label(status: &str) -> String {
+pub fn status_label(status: Status) -> String {
 	t(match status {
-		"disabled" => "API off",
-		"error" => "Voicenux error",
+		Status::Disabled => "API off",
+		Status::Error => "Voicenux error",
 		_ => "Voicenux off",
 	})
 }
 
 /// Shown on every key while Voicenux cannot be reached.
-pub fn status_key(status: &str) -> String {
-	let warn = status == "disabled" || status == "error";
+pub fn status_key(status: Status) -> String {
+	let warn = matches!(status, Status::Disabled | Status::Error);
 	let color = if warn { colors::AMBER } else { colors::GRAY };
 	let mut content = glyph(if warn { "plug" } else { "power" }, &GlyphOpts { x: 44.0, y: 22.0, size: 56.0, color, ..Default::default() });
 	let label = status_label(status);
@@ -276,8 +277,8 @@ mod tests {
 		assert!(!picture_key_svg(&PictureKey { png: Some("AAAA"), ..Default::default() }).contains("<rect"));
 		// Without a picture the glyph stands in.
 		assert!(!picture_key_svg(&PictureKey { title: "Robot", ..Default::default() }).contains("<image"));
-		assert!(status_key("disabled").starts_with("data:image/svg+xml;base64,"));
-		assert!(decode(&status_key("disabled")).contains("API off"));
+		assert!(status_key(Status::Disabled).starts_with("data:image/svg+xml;base64,"));
+		assert!(decode(&status_key(Status::Disabled)).contains("API off"));
 	}
 
 	#[test]

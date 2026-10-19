@@ -1,5 +1,5 @@
-// Voicenux for OpenDeck. The plugin runs on one thread, like the JavaScript version did: every event
-// from OpenDeck or Voicenux starts a task, and tasks take turns at each await.
+// Voicenux for OpenDeck. The plugin runs on one thread: every event from OpenDeck or Voicenux starts
+// a task, and tasks take turns at each await.
 pub mod actions;
 pub mod desktop;
 pub mod emitter;

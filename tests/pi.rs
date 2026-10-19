@@ -176,8 +176,8 @@ fn every_text_has_a_german_translation() {
 				}
 			}
 		}
-		// Errors and statuses reach the settings page, which translates them. Like in the JavaScript
-		// version, messages are the texts with a space, any {value} can be any value.
+		// Errors and statuses reach the settings page, which translates them. Messages are the texts
+		// with a space, any {value} can be any value.
 		for start in ["Err(", "Error::from(", "ok_or(", "set_status("] {
 			for (at, _) in code.match_indices(start) {
 				let open = at + start.len() - 1;
