@@ -22,14 +22,22 @@
 ## Project
 
 - An OpenDeck plugin for the voice changer [Voicenux](https://github.com/voicenux/voicenux). It is
-  built like [OBS Tools](https://github.com/FeloDeck/obs-tools): same base class, settings pages,
-  icons and scripts. When something is fixed or improved in one, look if the other needs it too.
-- The plugin is plain JavaScript (ES modules) for Node.js 22+, without dependencies. Keep it that
-  way: OpenDeck runs it with the system Node, and there is no build step.
+  built like [OBS Tools](https://github.com/FeloDeck/obs-tools): same base, settings pages, icons
+  and tools. When something is fixed or improved in one, look if the other needs it too.
+- The plugin is Rust (`src/`) and talks to OpenDeck through the `openaction` crate. It runs on one
+  thread, like the JavaScript version did: every event is a task of its own (tokio `LocalSet`).
+  Never hold a `RefCell` borrow across an `.await`. Settings come from the settings pages as loose
+  JSON: read them with the helpers on `Key` and in `src/js.rs` (truthy, `Number()`, `String()`).
+- `make package` builds for x86_64 and aarch64 with an old glibc (2.28), so it runs on older
+  distributions too. It needs zig, `cargo-zigbuild` and the Rust library for aarch64 (Arch:
+  `rust-aarch64-gnu`). `make install` only builds for this PC. Dev tools are Rust too:
+  `cargo xtask` lists them.
+- The binary is `voicenux-plugin`. Never name it `voicenux`: the plugin looks for a process of that
+  name to tell "API off" from "not running".
 - Plugin ID is `de.felitendo.voicenux` (folder `de.felitendo.voicenux.sdPlugin`). Do not change
   it: OpenDeck keys profiles and settings by it.
 - It talks to Voicenux over the Voicenux API (`API.md` in the Voicenux repo): one WebSocket on
-  `127.0.0.1:41967` for all keys, in `plugin/lib/voicenux.js`. Voicenux sends the state, the voices,
+  `127.0.0.1:41967` for all keys, in `src/voicenux.rs`. Voicenux sends the state, the voices,
   the sounds and what plays, and every change after that. Keys never poll. The API is off until the
   user turns on **Settings → Other apps → Let other apps control Voicenux**. A refused connection
   while a `voicenux` process runs means just that (status `disabled`), and the keys say "API off".
@@ -38,28 +46,33 @@
   load them straight from `http://127.0.0.1:41967/api/icon/NAME`.
 - New features of Voicenux that a key should use go into the API first (in the Voicenux repo, with
   `API.md`), not around it.
-- `manifest.json` and the icons in `images/` are generated. Change `scripts/manifest.mjs` or the
-  glyphs in `plugin/lib/icons.js`, then run `make manifest` or `make icons`. `make icons` first
-  measures every glyph (`scripts/fit-glyphs.mjs`, needs ImageMagick), so all icons end up the same
-  optical size and optically centered. The action order in `scripts/manifest.mjs` is the order in
-  OpenDeck: most used first. The plugin icon is the icon of Voicenux (`scripts/assets/voicenux.svg`).
-- Settings pages come from `pi/schemas.js`. A new setting needs a default in the action class and
-  a field in the schema. The status line is on top; while Voicenux cannot be reached, a box below
+- `manifest.json`, `de.json`, `pi/lib/shared.js` and the icons in `images/` are generated. Change
+  the actions in `src/manifest.rs` or the glyphs in `src/icons.rs`, then run `make manifest` or
+  `make icons`. `make icons` first measures every glyph (`cargo xtask fit-glyphs`, needs
+  ImageMagick), so all icons end up the same optical size and optically centered. The action order
+  in `src/manifest.rs` is the order in OpenDeck: most used first. The plugin icon is the icon of
+  Voicenux (`xtask/assets/voicenux.svg`).
+- The settings pages stay JavaScript (`pi/`): they run in OpenDeck's web view. What they share with
+  the plugin (German texts, glyphs) comes from Rust through `pi/lib/shared.js`. `pi/lib/render.js`
+  draws the same key pictures as `src/render.rs`: change both, `make check` compares them.
+- Settings pages come from `pi/schemas.js`. A new setting needs a default in the `defaults` of the
+  action (its `Kind` in `src/actions/`) and a field in the schema. The status line is on top; while Voicenux cannot be reached, a box below
   it says what to do, with a button that runs `voicenux open settings`. The settings of the key
   follow in sections (`section` in `pi/schemas.js`): what the key is about, Controls, On the key,
   and closed sections for the rest. Use the own `dropdown()`, `checkbox()` and number stepper in
   `pi/pi.js`, never native `<select>` or checkboxes: OpenDeck's WebKitGTK draws those in the GTK
   style.
-- An action that can do more than one thing lists it in `static ops` (the press choice is in the
-  setting `pressKey`), and its schema uses `gestures()`. Press, hold and double press then offer
-  the same choices, and the base class does the key handling.
-- Settings a key cannot work without go in `static required`, so the key shows the setup image
-  (gray glyph, yellow dot) until they are set. Errors an action throws show up on its settings
-  page: write them as short English sentences and add the German text.
+- An action that can do more than one thing lists it in `ops` of its `Kind` (the press choice is in
+  the setting `press_key`), and its schema uses `gestures()`. Press, hold and double press then
+  offer the same choices, and the base (`src/actions/mod.rs`) does the key handling.
+- Settings a key cannot work without go in `required`, so the key shows the setup image (gray
+  glyph, yellow dot) until they are set. Errors an action returns show up on its settings page:
+  write them as short English sentences and add the German text.
 - Everything a user can read comes in English and German. Write the English text in the code and
-  wrap it in `t()` (from `plugin/lib/i18n.js`), then add the German text there. Use the words of
-  Voicenux (Stimmverzerrer, Mich hören, Hintergrund, Sounds) and "du". Action names and tooltips for
-  the OpenDeck list are in `scripts/manifest.mjs` (it writes `de.json`). Messages the plugin sends
+  wrap it in `t()` (`src/i18n.rs`, or `pi/lib/i18n.js` on a settings page), then add the German
+  text to `src/i18n/de.rs` and run `make manifest`. Use the words of Voicenux (Stimmverzerrer, Mich
+  hören, Hintergrund, Sounds) and "du". Action names and tooltips for the OpenDeck list are in
+  `src/manifest.rs` (it writes `de.json`). Messages the plugin sends
   to a settings page stay English, the page translates them with `translateMessage()`.
   `make check` fails when a German text is missing.
 - Keys look like the other FeloDeck plugins: no background, bold white glyph in the middle, gray
@@ -69,17 +82,20 @@
   Elgato's USB vendor ID). If one is, test on it, but only in new profiles of its own, with a name
   that is not taken yet (for example "Voicenux Test"). Never change or delete the profiles that
   are already on it, they are in use. Note which profile was selected before
-  (`~/.config/opendeck/profiles/<device>.json`) and select it again when done.
+  (`~/.config/opendeck/profiles/<device>.json`) and select it again when done. `cargo xtask
+  profile` only writes profiles for the virtual deck.
 - Without a real Stream Deck, use the virtual deck of OBS Tools (`tools/virtual-deck` in
-  FeloDeck/obs-tools, `make install-virtual-deck` there). Put the keys on it with its
-  `make-profile.mjs test/e2e/layout.json "Voicenux Test"` while OpenDeck is stopped, then run
-  `node test/e2e/run.mjs`. It writes the selected profile, so select the old one again after.
+  FeloDeck/obs-tools, `make install-virtual-deck` there). Put the keys on it with
+  `cargo xtask profile test/e2e/layout.json "Voicenux Test"` while OpenDeck is stopped, then run
+  `cargo xtask e2e`. It writes the selected profile, so select the old one again after.
 - Test against a Voicenux of its own when one already runs: Voicenux finds its PipeWire nodes by
   name, so two of them in one PipeWire get mixed up. Give the test one its own `XDG_CONFIG_HOME`
   (with `api = true`), its own `dbus-daemon`, a `kwin_wayland --virtual` and its own PipeWire
   (`PIPEWIRE_CORE=vn-pw pipewire`, Voicenux with `PIPEWIRE_REMOTE=vn-pw`), and start it with
-  `voicenux open voices`.
-- `make check` runs the unit tests.
+  `voicenux open voices`. Socket paths must stay short (108 bytes), so give it an own
+  `XDG_RUNTIME_DIR` like `/run/user/<uid>/vntest`, not one in a deep temp folder.
+- `make check` runs the tests, also of the settings pages (in boa, a JavaScript engine in Rust, so
+  no Node is needed).
 
 ## Releases
 
@@ -88,7 +104,7 @@
 2. Bump `VERSION`, run `make manifest` and add the entry at the top of `CHANGELOG.md`, in one commit
    (`chore: 1.4.0`).
 3. Push, then push the tag: `git tag v1.4.0 && git push origin main v1.4.0`.
-4. `make package`, then `gh release create v1.4.0` with the entry from `CHANGELOG.md` and a short
+4. `make package` (both CPUs in one file), then `gh release create v1.4.0` with the entry from `CHANGELOG.md` and a short
    install part as notes, and only the plugin file, named `Voicenux-v1.4.0.streamDeckPlugin`. Never
    attach a `.zip` as well: the plugin store of OpenDeck then asks which file to download.
 

@@ -5,10 +5,10 @@
 // tiles: for choices that change how the key looks. Like segmented, with a small picture of the
 // key above each choice: preview(value, settings, page) is its SVG. value(settings) and apply(value)
 // can map the choice onto more than one setting. page has the lists and pictureUrl().
-// The texts are English. i18n.js has the other languages.
-import { t } from "../plugin/lib/i18n.js";
-import { COLORS, VOLUME_GLYPHS } from "../plugin/lib/icons.js";
-import { glyphKeySvg, pictureKeySvg } from "../plugin/lib/render.js";
+// The texts are English. src/i18n/de.rs has the German ones.
+import { t } from "./lib/i18n.js";
+import { COLORS, VOLUME_GLYPHS } from "./lib/icons.js";
+import { glyphKeySvg, pictureKeySvg } from "./lib/render.js";
 
 export const CONTROLS = "Controls";
 export const LOOK = "look";

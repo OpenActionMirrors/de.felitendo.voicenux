@@ -1,5 +1,5 @@
 // Settings page for every Voicenux action. The fields come from schemas.js.
-import { setLanguage, t, translateMessage } from "../plugin/lib/i18n.js";
+import { setLanguage, t, translateMessage } from "./lib/i18n.js";
 import { CONTROLS, LOOK, SCHEMAS } from "./schemas.js";
 
 const API = "http://127.0.0.1:41967";

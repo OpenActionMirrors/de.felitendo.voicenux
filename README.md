@@ -27,12 +27,14 @@
 
 ## Install
 
-You need OpenDeck 2, Node.js 22 or newer and Voicenux 0.1.0 or newer.
+You need OpenDeck 2 and Voicenux 0.1.0 or newer, on Linux with an x86_64 or ARM64 CPU.
 
 Download the `.streamDeckPlugin` file from the [latest release](https://github.com/voicenux/voicenux-plugin/releases/latest) and install it on the **Plugins** page of OpenDeck.
 
 <details>
 <summary>From source</summary>
+
+You need [Rust](https://rustup.rs).
 
 ```bash
 git clone https://github.com/voicenux/voicenux-plugin.git
@@ -46,7 +48,7 @@ Then restart OpenDeck. With the OpenDeck Flatpak, install into its folder:
 make install PLUGINS=~/.var/app/me.amankhanna.opendeck/config/opendeck/plugins
 ```
 
-`make package` builds `dist/de.felitendo.voicenux.streamDeckPlugin`.
+`make package` builds `dist/de.felitendo.voicenux.streamDeckPlugin` for x86_64 and ARM64 (it needs zig and cargo-zigbuild).
 
 </details>
 

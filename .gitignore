@@ -1,2 +1,3 @@
 dist/
-node_modules/
+target/
+de.felitendo.voicenux.sdPlugin/bin/

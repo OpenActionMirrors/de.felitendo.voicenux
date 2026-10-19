@@ -5,9 +5,13 @@ VERSION := $(shell cat VERSION)
 #   make install PLUGINS=~/.var/app/me.amankhanna.opendeck/config/opendeck/plugins
 PLUGINS ?= $(HOME)/.config/opendeck/plugins
 
-.PHONY: install uninstall link package check icons manifest clean
+.PHONY: build install uninstall link package check icons manifest clean
 
-install:
+# The plugin for this PC, into $(PLUGIN)/bin/<target>/.
+build:
+	cargo xtask build
+
+install: build
 	rm -rf "$(PLUGINS)/$(PLUGIN)"
 	mkdir -p "$(PLUGINS)"
 	cp -r $(PLUGIN) "$(PLUGINS)/$(PLUGIN)"
@@ -17,26 +21,25 @@ uninstall:
 	rm -rf "$(PLUGINS)/$(PLUGIN)"
 
 # For development: OpenDeck runs the files from this folder. Needs developer mode in OpenDeck.
-link:
+link: build
 	rm -rf "$(PLUGINS)/$(PLUGIN)"
 	ln -s "$(CURDIR)/$(PLUGIN)" "$(PLUGINS)/$(PLUGIN)"
 
-# dist/de.felitendo.voicenux.streamDeckPlugin, installable from the OpenDeck plugin page.
+# dist/de.felitendo.voicenux.streamDeckPlugin for x86_64 and aarch64, installable from the
+# OpenDeck plugin page. Needs zig and cargo-zigbuild.
 package:
-	rm -rf dist && mkdir -p dist
-	python3 -c 'import shutil; shutil.make_archive("dist/voicenux", "zip", ".", "$(PLUGIN)")'
-	mv dist/voicenux.zip dist/de.felitendo.voicenux.streamDeckPlugin
-	@echo "dist/de.felitendo.voicenux.streamDeckPlugin ($(VERSION))"
+	cargo xtask package
 
 check:
-	node --test 'test/*.test.mjs'
+	cargo test --workspace
 
 icons:
-	node scripts/fit-glyphs.mjs
-	node scripts/build-icons.mjs
+	cargo xtask fit-glyphs
+	cargo xtask icons
 
 manifest:
-	node scripts/manifest.mjs
+	cargo xtask manifest
 
 clean:
-	rm -rf dist
+	rm -rf dist $(PLUGIN)/bin
+	cargo clean

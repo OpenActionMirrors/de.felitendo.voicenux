@@ -9,9 +9,10 @@
 	"Icon": "images/plugin",
 	"Category": "Voicenux",
 	"CategoryIcon": "images/category",
-	"CodePath": "plugin/main.js",
-	"Nodejs": {
-		"Version": "22"
+	"CodePath": "bin/x86_64-unknown-linux-gnu/voicenux-plugin",
+	"CodePaths": {
+		"x86_64-unknown-linux-gnu": "bin/x86_64-unknown-linux-gnu/voicenux-plugin",
+		"aarch64-unknown-linux-gnu": "bin/aarch64-unknown-linux-gnu/voicenux-plugin"
 	},
 	"PropertyInspectorPath": "pi/index.html",
 	"SDKVersion": 2,

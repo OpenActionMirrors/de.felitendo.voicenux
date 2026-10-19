@@ -1,0 +1,40 @@
+[package]
+name = "voicenux-plugin"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "BSD-3-Clause"
+description = "Voicenux plugin for OpenDeck"
+
+# Not "voicenux": the plugin looks for a process of that name to know if Voicenux runs.
+[[bin]]
+name = "voicenux-plugin"
+path = "src/main.rs"
+
+[dependencies]
+async-trait = "0.1"
+base64 = "0.22"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+log = "0.4"
+openaction = "2.8"
+serde = { version = "1" }
+serde_json = { version = "1", features = ["preserve_order", "raw_value"] }
+tokio = { version = "1", features = ["rt", "net", "time", "sync", "macros", "process"] }
+tokio-tungstenite = "0.28"
+
+[dev-dependencies]
+boa_engine = { version = "0.22", default-features = false }
+regex = "1"
+tokio = { version = "1", features = ["test-util"] }
+
+[workspace]
+members = ["xtask"]
+
+# No debug info: smaller and faster builds.
+[profile.dev]
+debug = false
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
