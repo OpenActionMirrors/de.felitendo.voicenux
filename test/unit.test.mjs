@@ -117,13 +117,22 @@ test("a key without its voice or sound says why", async () => {
 	await assert.rejects(key(Sound, { sound: "" }).action.onPress(), /no sound selected/);
 });
 
-test("a sound key can stop its sound when it plays", async () => {
-	const { action, client } = key(Sound, { sound: "airhorn", press: "toggle" });
+test("a sound key plays in its own mode, also with an older Voicenux", async () => {
+	const { action, client } = key(Sound, { sound: "airhorn", press: "overlap" });
 	await action.onPress();
-	assert.deepEqual(client.calls.at(-1), ["sound", "airhorn"]);
-	client.playing = ["airhorn"];
-	await action.onPress();
+	assert.deepEqual(client.calls.at(-1), ["sound-overlap", "airhorn"]);
+	await action.onPress({ op: "stop" });
 	assert.deepEqual(client.calls.at(-1), ["stop-sound", "airhorn"]);
+	// Voicenux 0.1.0 knows only "sound": toggle and restart still work, on top can not.
+	const old = key(Sound, { sound: "airhorn", press: "toggle" });
+	const call = old.client.call.bind(old.client);
+	old.client.call = (name, arg) => (name.startsWith("sound-") ? Promise.reject(new Error(`unknown action "${name}", see API.md`)) : call(name, arg));
+	await old.action.onPress();
+	assert.deepEqual(old.client.calls.at(-1), ["sound", "airhorn"]);
+	old.client.playing = ["airhorn"];
+	await old.action.onPress();
+	assert.deepEqual(old.client.calls.at(-1), ["stop-sound", "airhorn"]);
+	await assert.rejects(old.action.onPress({ op: "overlap" }), /needs a newer Voicenux/);
 });
 
 test("soundboard volume stays between 0 and 100", async () => {

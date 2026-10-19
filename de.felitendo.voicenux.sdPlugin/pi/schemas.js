@@ -147,11 +147,14 @@ export const SCHEMAS = {
 		fields: [
 			{ key: "sound", label: "Sound", type: "select", list: "sounds" },
 			...gestures("press", [
-				["play", "Play, as the soundboard plays sounds"],
-				["toggle", "Play, or stop it when it plays"],
-				["stop", "Stop it"],
+				["restart", "Play from the start"],
+				["toggle", "Play and stop"],
+				["overlap", "Play on top"],
+				["stop", "Stop"],
 			]),
-			{ type: "note", text: "How the soundboard plays sounds (from the start, play and stop, or on top) is set in Voicenux, under the sounds.", showIf: (s) => uses(s, "press", ["play"], "play"), section: CONTROLS },
+			{ type: "note", text: "Play from the start: a press while it plays starts it over.", showIf: (s) => (s.press ?? "restart") === "restart", section: CONTROLS },
+			{ type: "note", text: "Play and stop: a press while it plays stops it.", showIf: (s) => s.press === "toggle", section: CONTROLS },
+			{ type: "note", text: "Play on top: every press starts it once more, over the one that still plays.", showIf: (s) => s.press === "overlap", section: CONTROLS },
 			titleTiles("Name", "showName", "nameAt", itemKey("sounds", "sound", () => null)),
 			{ key: "showPlaying", section: LOOK, label: "Frame", type: "checkbox", text: "While the sound plays" },
 		],
@@ -187,11 +190,11 @@ export const SCHEMAS = {
 	[`${ID}.randomvoice`]: stepSchema("random"),
 	[`${ID}.nextvoice`]: stepSchema("next"),
 	[`${ID}.stopsounds`]: {
-		help: "Stops every sound of the soundboard. The key is white while a sound plays.",
+		help: "Stops all sounds that play. The key is white while one plays.",
 		fields: [],
 	},
 	[`${ID}.soundvolume`]: {
-		help: "The volume of the soundboard, for everyone who hears the sounds.",
+		help: "How loud the sounds play for everyone: for others in the Voicenux Microphone, and for you when Hear sounds myself is on.",
 		fields: [
 			...gestures(
 				"mode",
@@ -207,7 +210,7 @@ export const SCHEMAS = {
 			titleTiles("Volume", "showValue", "valueAt", (at, s, page) => glyphKeySvg(VOLUME_GLYPHS[s.mode ?? "up"], { title: at ? `${page.state?.sound_volume ?? 80}%` : "", titleAt: at || "below" })),
 		],
 	},
-	[`${ID}.hearsounds`]: switchSchema("hearsounds", "Hear the sounds of the soundboard yourself. Others hear them either way."),
+	[`${ID}.hearsounds`]: switchSchema("hearsounds", "Hear the sounds yourself too, in your headphones. Others always hear them."),
 	[`${ID}.voicedial`]: {
 		...DIAL,
 		help: "Turn to pick a voice, press to use it. Press while it shows the voice in use to turn the voice changer on or off.",

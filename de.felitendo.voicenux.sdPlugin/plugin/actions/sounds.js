@@ -12,10 +12,11 @@ const clamp = (value) => Math.max(0, Math.min(100, Math.round(Number(value) || 0
 export class Sound extends PictureAction {
 	static uuid = `${ID}.sound`;
 	static required = ["sound"];
-	// play: as the soundboard plays sounds. toggle: play, or stop when it plays. stop: stop it.
+	// The play modes of Voicenux, for this key alone: restart (from the start), toggle (play and
+	// stop), overlap (another copy on top). stop: stop it.
 	static pressKey = "press";
-	static ops = ["play", "toggle", "stop"];
-	static defaults = { sound: "", press: "play", hold: "none", double: "none", showName: true, nameAt: "below", showPlaying: true };
+	static ops = ["restart", "toggle", "overlap", "stop"];
+	static defaults = { sound: "", press: "restart", hold: "none", double: "none", showName: true, nameAt: "below", showPlaying: true };
 
 	sound() {
 		return this.client.sound(this.settings.sound);
@@ -47,8 +48,21 @@ export class Sound extends PictureAction {
 		const sound = this.sound();
 		if (!sound) throw new Error(this.settings.sound ? "This sound is gone from Voicenux" : "no sound selected");
 		const op = this.op(args);
-		if (op === "stop" || (op === "toggle" && this.playing())) await this.call("stop-sound", sound.id);
-		else await this.call("sound", sound.id);
+		if (op === "stop") await this.call("stop-sound", sound.id);
+		else await this.playAs(op, sound.id);
+	}
+
+	// Voicenux 0.1.0 does not know sound-restart, sound-toggle and sound-overlap yet. There a key
+	// plays as the soundboard is set, and only on top can not work.
+	async playAs(mode, id) {
+		try {
+			await this.call(`sound-${mode}`, id);
+		} catch (error) {
+			if (!/unknown action/.test(error.message)) throw error;
+			if (mode === "overlap") throw new Error("Play on top needs a newer Voicenux");
+			if (mode === "toggle" && this.playing()) await this.call("stop-sound", id);
+			else await this.call("sound", id);
+		}
 	}
 }
 

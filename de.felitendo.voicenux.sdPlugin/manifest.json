@@ -43,7 +43,7 @@
 			"UUID": "de.felitendo.voicenux.sound",
 			"Name": "Sound",
 			"Icon": "images/actions/sound",
-			"Tooltip": "Play a sound of the soundboard. Shows its picture, with a frame while it plays.",
+			"Tooltip": "Play a sound of the soundboard: from the start, on top, or play and stop. Shows its picture, with a frame while it plays.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -166,7 +166,7 @@
 			"UUID": "de.felitendo.voicenux.stopsounds",
 			"Name": "Stop Sounds",
 			"Icon": "images/actions/stop",
-			"Tooltip": "Stop every sound of the soundboard.",
+			"Tooltip": "Stop all sounds that play.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -212,7 +212,7 @@
 			"UUID": "de.felitendo.voicenux.soundvolume",
 			"Name": "Soundboard Volume",
 			"Icon": "images/actions/volumeUp",
-			"Tooltip": "Turn the soundboard louder, quieter or to a set value. Hold the key to keep going.",
+			"Tooltip": "Make the sounds louder, quieter or set their volume. Hold the key to keep going.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -230,7 +230,7 @@
 			"UUID": "de.felitendo.voicenux.hearsounds",
 			"Name": "Hear Sounds",
 			"Icon": "images/actions/hearsounds",
-			"Tooltip": "Hear the sounds of the soundboard yourself, on or off.",
+			"Tooltip": "Hear the sounds yourself too, on or off.",
 			"Controllers": [
 				"Keypad"
 			],

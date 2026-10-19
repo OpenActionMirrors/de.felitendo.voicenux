@@ -18,16 +18,16 @@ const dial = (icon, layout, trigger) => ({
 // the ones people use most come first.
 const actions = [
 	["voice", "Voice", "voice", "Turn a voice on or off, or use it only while you hold the key. Shows its picture, with a frame while it is in use.", [state("voice")]],
-	["sound", "Sound", "sound", "Play a sound of the soundboard. Shows its picture, with a frame while it plays.", [state("sound")]],
+	["sound", "Sound", "sound", "Play a sound of the soundboard: from the start, on top, or play and stop. Shows its picture, with a frame while it plays.", [state("sound")]],
 	["voicechanger", "Voice Changer", "voicechanger", "Turn the voice changer on or off, or push to change your voice.", [state("voicechanger"), state("voicechanger-on")]],
 	["mute", "Mute", "mic", "Mute or unmute your microphone, or push to talk.", [state("unmuted"), state("muted")]],
 	["hearmyself", "Hear Myself", "headphones", "Hear your changed voice in your headphones, on or off.", [state("hearmyself"), state("hearmyself-on")]],
 	["randomvoice", "Random Voice", "random", "Use a random voice, out of your favorites when you have two or more.", [state("random")]],
 	["nextvoice", "Next Voice", "next", "Use the next or previous voice. Can show the voice in use.", [state("next")]],
-	["stopsounds", "Stop Sounds", "stop", "Stop every sound of the soundboard.", [state("stopsounds"), state("stopsounds-on")]],
+	["stopsounds", "Stop Sounds", "stop", "Stop all sounds that play.", [state("stopsounds"), state("stopsounds-on")]],
 	["background", "Background", "background", "Background sounds of the voice, like rain or a crowd, on or off.", [state("background"), state("background-on")]],
-	["soundvolume", "Soundboard Volume", "volumeUp", "Turn the soundboard louder, quieter or to a set value. Hold the key to keep going.", [state("soundvolume")]],
-	["hearsounds", "Hear Sounds", "hearsounds", "Hear the sounds of the soundboard yourself, on or off.", [state("hearsounds"), state("hearsounds-on")]],
+	["soundvolume", "Soundboard Volume", "volumeUp", "Make the sounds louder, quieter or set their volume. Hold the key to keep going.", [state("soundvolume")]],
+	["hearsounds", "Hear Sounds", "hearsounds", "Hear the sounds yourself too, on or off.", [state("hearsounds"), state("hearsounds-on")]],
 	["voicedial", "Voice (Dial)", "voice", "Turn the dial to pick a voice (with its picture), press to use it.", [{ Image: "images/encoder/voice-key" }], dial("voice", "layouts/voice-dial.json", { Rotate: "Pick a voice", Push: "Use it", Touch: "Use it" })],
 	["soundvolumedial", "Soundboard Volume (Dial)", "volume", "Turn the dial for the soundboard volume, press to stop all sounds.", [{ Image: "images/encoder/volume-key" }], dial("volume", "layouts/dial.json", { Rotate: "Volume", Push: "Stop all sounds", Touch: "Stop all sounds" })],
 ];
@@ -35,16 +35,16 @@ const actions = [
 // OpenDeck shows these names and tooltips when its language is German.
 const de = {
 	voice: ["Stimme", "Eine Stimme an- oder ausschalten, oder nur nehmen, solange du die Taste hältst. Zeigt ihr Bild, mit Rahmen, solange sie aktiv ist."],
-	sound: ["Sound", "Einen Sound vom Soundboard abspielen. Zeigt sein Bild, mit Rahmen, solange er läuft."],
+	sound: ["Sound", "Einen Sound vom Soundboard abspielen: von vorne, übereinander oder mit Start/Stopp. Zeigt sein Bild, mit Rahmen, solange er läuft."],
 	voicechanger: ["Stimmverzerrer", "Den Stimmverzerrer an- oder ausschalten, oder zum Verzerren drücken."],
 	mute: ["Stummschalten", "Dein Mikrofon stumm- oder lautschalten, oder zum Sprechen drücken."],
 	hearmyself: ["Mich hören", "Deine verzerrte Stimme im Kopfhörer hören, an oder aus."],
 	randomvoice: ["Zufällige Stimme", "Eine zufällige Stimme nehmen, aus deinen Favoriten, sobald es mindestens zwei sind."],
 	nextvoice: ["Nächste Stimme", "Die nächste oder vorherige Stimme nehmen. Kann die aktive Stimme zeigen."],
-	stopsounds: ["Sounds stoppen", "Alle Sounds vom Soundboard stoppen."],
+	stopsounds: ["Sounds stoppen", "Alle Sounds stoppen, die gerade laufen."],
 	background: ["Hintergrund", "Hintergrundgeräusche der Stimme, etwa Regen oder eine Menge, an oder aus."],
-	soundvolume: ["Soundboard-Lautstärke", "Das Soundboard lauter, leiser oder auf einen Wert stellen. Halten macht weiter."],
-	hearsounds: ["Sounds hören", "Die Sounds vom Soundboard selbst hören, an oder aus."],
+	soundvolume: ["Soundboard-Lautstärke", "Die Sounds lauter oder leiser machen oder ihre Lautstärke festlegen. Gedrückt halten macht weiter."],
+	hearsounds: ["Sounds selbst hören", "Die Sounds auch selbst hören, an oder aus."],
 	voicedial: ["Stimme (Drehregler)", "Drehen wählt eine Stimme (mit Bild), Drücken nimmt sie."],
 	soundvolumedial: ["Soundboard-Lautstärke (Drehregler)", "Drehen ändert die Lautstärke des Soundboards, Drücken stoppt alle Sounds."],
 };

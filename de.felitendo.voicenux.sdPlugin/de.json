@@ -7,7 +7,7 @@
 	},
 	"de.felitendo.voicenux.sound": {
 		"Name": "Sound",
-		"Tooltip": "Einen Sound vom Soundboard abspielen. Zeigt sein Bild, mit Rahmen, solange er läuft."
+		"Tooltip": "Einen Sound vom Soundboard abspielen: von vorne, übereinander oder mit Start/Stopp. Zeigt sein Bild, mit Rahmen, solange er läuft."
 	},
 	"de.felitendo.voicenux.voicechanger": {
 		"Name": "Stimmverzerrer",
@@ -31,7 +31,7 @@
 	},
 	"de.felitendo.voicenux.stopsounds": {
 		"Name": "Sounds stoppen",
-		"Tooltip": "Alle Sounds vom Soundboard stoppen."
+		"Tooltip": "Alle Sounds stoppen, die gerade laufen."
 	},
 	"de.felitendo.voicenux.background": {
 		"Name": "Hintergrund",
@@ -39,11 +39,11 @@
 	},
 	"de.felitendo.voicenux.soundvolume": {
 		"Name": "Soundboard-Lautstärke",
-		"Tooltip": "Das Soundboard lauter, leiser oder auf einen Wert stellen. Halten macht weiter."
+		"Tooltip": "Die Sounds lauter oder leiser machen oder ihre Lautstärke festlegen. Gedrückt halten macht weiter."
 	},
 	"de.felitendo.voicenux.hearsounds": {
-		"Name": "Sounds hören",
-		"Tooltip": "Die Sounds vom Soundboard selbst hören, an oder aus."
+		"Name": "Sounds selbst hören",
+		"Tooltip": "Die Sounds auch selbst hören, an oder aus."
 	},
 	"de.felitendo.voicenux.voicedial": {
 		"Name": "Stimme (Drehregler)",

@@ -68,16 +68,16 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 | Action | What it does |
 |---|---|
 | Voice | Turn a voice on or off (off is your own voice), use it only while you hold the key, or star it. |
-| Sound | Play a sound of the soundboard, or stop it. |
+| Sound | Play a sound from the start, on top, or play and stop it. |
 | Voice Changer | Turn the voice changer on or off, or push to change your voice. |
 | Mute | Mute or unmute your microphone, push to talk or push to mute. |
 | Hear Myself | Hear your changed voice in your headphones. |
 | Random Voice | A random voice, out of your favorites when you have two or more. |
 | Next Voice | The next or previous voice, out of your favorites when you have some. Can show the voice in use. |
-| Stop Sounds | Stop every sound. White while a sound plays. |
+| Stop Sounds | Stop all sounds that play. White while one plays. |
 | Background | Background sounds of the voice on or off. |
-| Soundboard Volume | Louder, quieter or to a value. Hold to keep going. |
-| Hear Sounds | Hear the soundboard yourself. |
+| Soundboard Volume | Make the sounds louder, quieter or set their volume. Hold to keep going. |
+| Hear Sounds | Hear the sounds yourself too. |
 | Voice (Dial) | Turn to pick a voice (with its picture), press to use it. Only favorites if you like. |
 | Soundboard Volume (Dial) | Turn for the soundboard volume, press to stop all sounds. |
 
