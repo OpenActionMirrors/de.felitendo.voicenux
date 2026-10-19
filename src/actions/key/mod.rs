@@ -10,15 +10,17 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::rc::{Rc, Weak};
 
+use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 use tokio::task::spawn_local;
 
 pub use gestures::{DOUBLE_PRESS_MS, LONG_PRESS_MS};
 
 use super::{Behavior, Controller, Kind};
-use crate::js::{self, truthy};
+use crate::js;
 use crate::plugin::Plugin;
 use crate::sd::Sd;
+use crate::settings;
 use crate::timers::{Timer, set_timeout};
 use crate::voicenux::{Change, State, Status, VoicenuxClient};
 use crate::{Error, Res};
@@ -149,32 +151,25 @@ impl Key {
 		with_defaults(self.kind, settings)
 	}
 
-	pub fn settings(&self) -> Map<String, Value> {
+	/// The settings as the action keeps them (with its defaults), for OpenDeck and the settings page.
+	pub fn settings_map(&self) -> Map<String, Value> {
 		self.b.borrow().settings.clone()
 	}
 
-	/// A setting as it is (None: not there).
-	pub fn s(&self, key: &str) -> Option<Value> {
+	/// The settings as the struct of the action (see settings.rs).
+	pub fn settings<T: DeserializeOwned + Default>(&self) -> T {
+		settings::read(&self.b.borrow().settings)
+	}
+
+	/// One setting as it is, for settings whose name is not fixed (None: not there).
+	pub fn setting(&self, key: &str) -> Option<Value> {
 		self.b.borrow().settings.get(key).cloned()
-	}
-
-	/// A setting as text, like `String(value ?? "")`.
-	pub fn s_str(&self, key: &str) -> String {
-		js::str_or_empty(self.b.borrow().settings.get(key))
-	}
-
-	pub fn s_truthy(&self, key: &str) -> bool {
-		truthy(self.b.borrow().settings.get(key))
-	}
-
-	/// Number(value)
-	pub fn s_num(&self, key: &str) -> f64 {
-		js::number(self.b.borrow().settings.get(key))
 	}
 
 	/// A key is set up when its required settings are filled in.
 	pub fn is_set_up(&self) -> bool {
-		self.kind.required.iter().all(|key| !js::trim(&self.s_str(key)).is_empty())
+		let b = self.b.borrow();
+		self.kind.required.iter().all(|key| !js::trim(&js::str_or_empty(b.settings.get(*key))).is_empty())
 	}
 
 	pub fn controller(&self) -> Controller {

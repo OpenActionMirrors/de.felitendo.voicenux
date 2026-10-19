@@ -1,4 +1,6 @@
+// Voices: one voice, the next, previous or a random one, and the voice dial.
 use async_trait::async_trait;
+use serde::Deserialize;
 use serde_json::json;
 use tokio::task::spawn_local;
 
@@ -18,6 +20,18 @@ const PICK_TIMEOUT: f64 = 6000.0;
 // toggle: this voice, or your own voice when it is in use. use: always this voice.
 // whileHeld: this voice while the key is held, then back to the voice from before. favorite: star it.
 
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct VoiceSettings {
+	/// The id of the voice.
+	voice: String,
+	show_name: bool,
+	/// "below" or "above".
+	name_at: String,
+	/// A frame while the voice is in use.
+	show_frame: bool,
+}
+
 #[derive(Default)]
 struct VoiceState {
 	// The voice in use and the voice changer before a "while held" press.
@@ -26,12 +40,6 @@ struct VoiceState {
 
 struct Voice;
 
-impl Voice {
-	fn voice(&self, k: &KeyRc) -> Option<VoiceInfo> {
-		k.client.voice(&k.s_str("voice"))
-	}
-}
-
 #[async_trait(?Send)]
 impl Behavior for Voice {
 	fn render_offline(&self, k: &KeyRc) {
@@ -39,27 +47,27 @@ impl Behavior for Voice {
 	}
 
 	fn render(&self, k: &KeyRc) {
-		let show_name = k.s_truthy("showName");
-		let name_at = k.s_str("nameAt");
-		let Some(voice) = self.voice(k) else {
+		let s: VoiceSettings = k.settings();
+		let Some(voice) = k.client.voice(&s.voice) else {
 			// Deleted in Voicenux, or not loaded yet.
-			let title = if show_name { k.s_str("voice") } else { String::new() };
-			k.own_title(&title);
-			k.set_image(&glyph_key("voice", &GlyphKey { color: colors::GRAY, title: &title, title_at: &name_at, ..Default::default() }));
+			let title = if s.show_name { s.voice.as_str() } else { "" };
+			k.own_title(title);
+			k.set_image(&glyph_key("voice", &GlyphKey { color: colors::GRAY, title, title_at: &s.name_at, ..Default::default() }));
 			return;
 		};
 		let vn = k.vn();
 		let in_use = vn.voice_id() == Some(voice.id.as_str());
-		let frame = (k.s_truthy("showFrame") && in_use).then_some(if vn.voice_changer { Frame::On } else { Frame::Off });
-		let title = if show_name { voice.name.clone() } else { String::new() };
-		k.own_title(&title);
+		let frame = (s.show_frame && in_use).then_some(if vn.voice_changer { Frame::On } else { Frame::Off });
+		let title = if s.show_name { voice.name.as_str() } else { "" };
+		k.own_title(title);
 		let png = k.picture(&voice.icon);
-		k.set_image(&picture_key(&PictureKey { png: png.as_deref(), title: &title, title_at: &name_at, frame, ..Default::default() }));
+		k.set_image(&picture_key(&PictureKey { png: png.as_deref(), title, title_at: &s.name_at, frame, ..Default::default() }));
 	}
 
 	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
-		let Some(voice) = self.voice(k) else {
-			return Err(Error::from(if k.s_truthy("voice") { "This voice is gone from Voicenux" } else { "no voice selected" }));
+		let id = k.settings::<VoiceSettings>().voice;
+		let Some(voice) = k.client.voice(&id) else {
+			return Err(Error::from(if id.is_empty() { "no voice selected" } else { "This voice is gone from Voicenux" }));
 		};
 		let op = press.op;
 		let vn = k.vn();
@@ -115,6 +123,15 @@ pub static VOICE: Kind = Kind {
 
 // ----- Next, previous or a random voice. Can show the voice in use. -----
 
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct StepSettings {
+	/// "icon" (an arrow or a dice) or "voice" (the picture of the voice in use).
+	look: String,
+	show_name: bool,
+	name_at: String,
+}
+
 struct Step;
 
 impl Step {
@@ -134,15 +151,16 @@ impl Behavior for Step {
 	}
 
 	fn render(&self, k: &KeyRc) {
+		let s: StepSettings = k.settings();
 		let vn = k.vn();
-		let name_at = k.s_str("nameAt");
+		let name_at = s.name_at;
 		let title = match &vn.voice {
-			Some(voice) if k.s_truthy("showName") => voice.name.clone(),
+			Some(voice) if s.show_name => voice.name.clone(),
 			_ => String::new(),
 		};
 		k.own_title(&title);
 		match &vn.voice {
-			Some(voice) if k.s_str("look") == "voice" => {
+			Some(voice) if s.look == "voice" => {
 				let png = k.picture(&voice.icon);
 				k.set_image(&picture_key(&PictureKey {
 					png: png.as_deref(),
@@ -196,6 +214,13 @@ pub static RANDOM_VOICE: Kind = Kind {
 // Pressed while it shows the voice in use, it turns the voice changer on or off.
 // list: "all" voices or only "favorites". mode: "pick" (press to use) or "direct" (turning uses it).
 
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct VoiceDialSettings {
+	list: String,
+	mode: String,
+}
+
 #[derive(Default)]
 struct DialState {
 	selected: Option<String>,
@@ -219,7 +244,7 @@ impl VoiceDial {
 	// The voices to turn through. Favorites only when there are some.
 	fn list(&self, k: &KeyRc) -> Vec<VoiceInfo> {
 		let all = k.client.voices();
-		if k.s_str("list") == "favorites" {
+		if k.settings::<VoiceDialSettings>().list == "favorites" {
 			let favorites: Vec<VoiceInfo> = all.iter().filter(|v| v.favorite).cloned().collect();
 			if !favorites.is_empty() {
 				return favorites;
@@ -303,7 +328,7 @@ impl Behavior for VoiceDial {
 			d.selected = Some(next.clone());
 		}
 		self.render(k);
-		if k.s_str("mode") == "direct" {
+		if k.settings::<VoiceDialSettings>().mode == "direct" {
 			// Wait a moment, so a fast turn does not switch through every voice.
 			let timer = k.after(250.0, move |k| {
 				spawn_local(async move {
@@ -356,6 +381,15 @@ pub static VOICE_DIAL: Kind = Kind {
 mod tests {
 	use super::*;
 	use crate::actions::testing::*;
+	use crate::settings::testing::assert_defaults;
+
+	#[test]
+	fn every_setting_has_a_default() {
+		assert_defaults::<VoiceSettings>(&[&VOICE]);
+		assert_defaults::<StepSettings>(&[&NEXT_VOICE]);
+		assert_defaults::<StepSettings>(&[&RANDOM_VOICE]);
+		assert_defaults::<VoiceDialSettings>(&[&VOICE_DIAL]);
+	}
 
 	#[tokio::test]
 	async fn a_voice_key_uses_its_voice_or_goes_back_to_your_own_voice() {

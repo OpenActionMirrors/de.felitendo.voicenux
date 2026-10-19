@@ -91,9 +91,13 @@ fn rust_files(dir: &Path, out: &mut Vec<PathBuf>) {
 	}
 }
 
-// The code of a file without its tests.
+// The code of a file without its test modules (a #[cfg(test)] field does not end the code).
 fn without_tests(code: &str) -> &str {
-	match code.find("#[cfg(test)]\nmod tests") {
+	let module = code.match_indices("#[cfg(test)]\n").map(|(i, _)| i).find(|&i| {
+		let next = &code[i + "#[cfg(test)]\n".len()..];
+		next.starts_with("mod ") || next.starts_with("pub(crate) mod ")
+	});
+	match module {
 		Some(i) => &code[..i],
 		None => code,
 	}

@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
+use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio::task::spawn_local;
 
@@ -10,6 +11,7 @@ use crate::actions::{Appearance, Controller, Key, KeyRc, Kind};
 use crate::desktop::{installed, open_voicenux};
 use crate::js::{self, truthy};
 use crate::sd::Sd;
+use crate::settings;
 use crate::voicenux::{Change, PORT, VoicenuxClient};
 
 /// What happened to a key.
@@ -117,7 +119,7 @@ impl Plugin {
 		let instance = self.instance_for(e)?;
 		if let Some(settings) = e.settings.as_ref().filter(|s| truthy(Some(s))) {
 			let merged = Value::Object(instance.with_defaults(Some(settings)));
-			if !js::same(&merged, &Value::Object(instance.settings())) {
+			if !js::same(&merged, &Value::Object(instance.settings_map())) {
 				instance.update_settings(Some(settings));
 			}
 		}
@@ -217,7 +219,7 @@ impl Plugin {
 			// The voice in use and the soundboard volume, for the pictures of the key.
 			"voicenux": voicenux,
 			"lists": { "voices": voices, "sounds": sounds },
-			"settings": instance.as_ref().map_or(Value::Null, |i| Value::Object(i.settings())),
+			"settings": instance.as_ref().map_or(Value::Null, |i| Value::Object(i.settings_map())),
 			"keyError": instance.as_ref().and_then(|i| i.last_error()).map_or(Value::Null, Value::from),
 		})
 	}
@@ -252,29 +254,31 @@ impl Plugin {
 			}
 			self.sd.send_to_property_inspector(&context, Value::Object(data));
 		};
-		match payload.get("type").and_then(Value::as_str).unwrap_or("") {
+		let m: Message = settings::read_value(&payload);
+		match m.kind.as_str() {
 			"hello" => self.send_state(&context),
 			// Starts Voicenux on its settings, where "Let other apps control Voicenux" is.
-			"openVoicenux" => {
-				let page = match payload.get("page") {
-					None | Some(Value::Null) => "settings".to_string(),
-					page => js::to_string(page),
-				};
-				match open_voicenux(&page) {
-					Ok(()) => reply(json!({ "type": "opened" })),
-					Err(error) => reply(json!({ "type": "opened", "error": error.message() })),
-				}
-			}
+			"openVoicenux" => match open_voicenux(m.page.as_deref().unwrap_or("settings")) {
+				Ok(()) => reply(json!({ "type": "opened" })),
+				Err(error) => reply(json!({ "type": "opened", "error": error.message() })),
+			},
 			"retry" => self.client.reconnect(),
-			"openUrl" => {
-				let url = js::str_or_empty(payload.get("url"));
-				if url.starts_with("http://") || url.starts_with("https://") {
-					self.sd.open_url(&url);
-				}
-			}
+			"openUrl" if m.url.starts_with("http://") || m.url.starts_with("https://") => self.sd.open_url(&m.url),
 			_ => {}
 		}
 	}
+}
+
+/// A message of a settings page. Each type uses a part of the fields.
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct Message {
+	#[serde(rename = "type")]
+	kind: String,
+	/// openVoicenux: the page to open. None: the settings.
+	page: Option<String>,
+	/// openUrl
+	url: String,
 }
 
 /// Starts the handling of an event as a task of its own, without waiting for it.

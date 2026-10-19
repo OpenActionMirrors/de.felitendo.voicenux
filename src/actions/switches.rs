@@ -1,4 +1,6 @@
+// Switches of Voicenux (voice changer, hear myself, background, hear sounds) and mute.
 use async_trait::async_trait;
+use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
 use super::{Behavior, Gesture, KeyRc, Kind, Press, defaults};
@@ -8,6 +10,16 @@ use crate::voicenux::State;
 
 fn switch_defaults() -> Map<String, Value> {
 	defaults(json!({ "mode": "toggle", "hold": "none", "double": "none", "showState": false, "stateAt": "below" }))
+}
+
+/// What the switch and mute keys show.
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct SwitchSettings {
+	/// "On"/"Off" (or "Muted"/"Live") by the glyph.
+	show_state: bool,
+	/// "below" or "above".
+	state_at: String,
 }
 
 // ----- A switch of Voicenux: on, off or toggle. White when on, gray when off. -----
@@ -35,8 +47,9 @@ impl Behavior for Switch {
 	fn render(&self, k: &KeyRc) {
 		let on = self.is_on(k);
 		k.set_state(u16::from(on));
-		let title = if k.s_truthy("showState") { t(if on { "On" } else { "Off" }) } else { String::new() };
-		k.glyph_for_title(&title, &k.s_str("stateAt"));
+		let s: SwitchSettings = k.settings();
+		let title = if s.show_state { t(if on { "On" } else { "Off" }) } else { String::new() };
+		k.glyph_for_title(&title, &s.state_at);
 	}
 
 	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
@@ -134,8 +147,9 @@ impl Behavior for Mute {
 	fn render(&self, k: &KeyRc) {
 		let muted = k.vn().mute;
 		k.set_state(u16::from(muted));
-		let title = if k.s_truthy("showState") { t(if muted { "Muted" } else { "Live" }) } else { String::new() };
-		k.glyph_for_title(&title, &k.s_str("stateAt"));
+		let s: SwitchSettings = k.settings();
+		let title = if s.show_state { t(if muted { "Muted" } else { "Live" }) } else { String::new() };
+		k.glyph_for_title(&title, &s.state_at);
 	}
 
 	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
@@ -178,6 +192,14 @@ pub static MUTE: Kind = Kind {
 mod tests {
 	use super::*;
 	use crate::actions::testing::*;
+	use crate::settings::testing::assert_defaults;
+
+	#[test]
+	fn every_setting_has_a_default() {
+		for kind in [&VOICE_CHANGER, &HEAR_MYSELF, &BACKGROUND, &HEAR_SOUNDS, &MUTE] {
+			assert_defaults::<SwitchSettings>(&[kind]);
+		}
+	}
 
 	#[tokio::test]
 	async fn switches_and_mute_send_on_off_or_toggle() {

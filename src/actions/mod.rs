@@ -8,6 +8,7 @@ pub mod voices;
 use std::any::Any;
 
 use async_trait::async_trait;
+use serde::Deserialize;
 use serde_json::{Map, Value};
 
 #[cfg(test)]
@@ -130,11 +131,17 @@ pub trait Behavior: Sync {
 	}
 	/// A touch does what a press does, unless touches are off.
 	async fn on_touch_tap(&self, k: &KeyRc) -> Res<()> {
-		if !k.s_truthy("disableTouch") {
+		if !k.settings::<Touch>().disable_touch {
 			return self.on_dial_down(k).await;
 		}
 		Ok(())
 	}
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct Touch {
+	disable_touch: bool,
 }
 
 /// The defaults of an action from a JSON object.

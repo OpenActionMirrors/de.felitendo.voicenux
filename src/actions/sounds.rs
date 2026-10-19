@@ -1,6 +1,8 @@
+// Sounds: one sound of the soundboard, a random one, stop all, and the soundboard volume.
 use std::hash::{BuildHasher, Hasher};
 
 use async_trait::async_trait;
+use serde::Deserialize;
 use serde_json::json;
 
 use super::{Behavior, Gesture, KeyRc, Kind, Press, defaults};
@@ -8,13 +10,13 @@ use crate::i18n::t;
 use crate::icons::{colors, volume_glyph};
 use crate::js::{self, fmt};
 use crate::render::{Frame, GlyphKey, PictureKey, dial_icon, glyph_key, picture_key};
+use crate::settings::or;
 use crate::voicenux::{Change, Sound as SoundInfo};
 use crate::{Error, Res};
 
-// 0 to 100, like Math.max(0, Math.min(100, Math.round(Number(value) || 0))).
+// 0 to 100, whole numbers. NaN is 0.
 fn clamp(value: f64) -> f64 {
-	let value = if js::truthy_num(value) { value } else { 0.0 };
-	js::max(0.0, js::min(100.0, js::round(value)))
+	js::max(0.0, js::min(100.0, js::round(or(value, 0.0))))
 }
 
 // Like Math.random(): a number from 0 up to 1. Every RandomState starts from new random keys.
@@ -45,13 +47,19 @@ async fn play_as(k: &KeyRc, mode: &str, id: &str) -> Res<()> {
 // The play modes of Voicenux, for this key alone: restart (from the start), toggle (play and stop),
 // overlap (another copy on top). stop: stop it.
 
-struct Sound;
-
-impl Sound {
-	fn sound(&self, k: &KeyRc) -> Option<SoundInfo> {
-		k.client.sound(&k.s_str("sound"))
-	}
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct SoundSettings {
+	/// The id of the sound.
+	sound: String,
+	show_name: bool,
+	/// "below" or "above".
+	name_at: String,
+	/// A frame while the sound plays.
+	show_playing: bool,
 }
+
+struct Sound;
 
 #[async_trait(?Send)]
 impl Behavior for Sound {
@@ -60,32 +68,31 @@ impl Behavior for Sound {
 	}
 
 	fn render(&self, k: &KeyRc) {
-		let show_name = k.s_truthy("showName");
-		let name_at = k.s_str("nameAt");
-		let id = k.s_str("sound");
-		let Some(sound) = self.sound(k) else {
-			let title = if show_name { id } else { String::new() };
-			k.own_title(&title);
-			k.set_image(&glyph_key("sound", &GlyphKey { color: colors::GRAY, title: &title, title_at: &name_at, ..Default::default() }));
+		let s: SoundSettings = k.settings();
+		let Some(sound) = k.client.sound(&s.sound) else {
+			let title = if s.show_name { s.sound.as_str() } else { "" };
+			k.own_title(title);
+			k.set_image(&glyph_key("sound", &GlyphKey { color: colors::GRAY, title, title_at: &s.name_at, ..Default::default() }));
 			return;
 		};
-		let title = if show_name { sound.name.clone() } else { String::new() };
-		k.own_title(&title);
-		let playing = k.client.playing().contains(&id);
+		let title = if s.show_name { sound.name.as_str() } else { "" };
+		k.own_title(title);
+		let playing = k.client.playing().contains(&s.sound);
 		let png = k.picture(&sound.icon);
 		k.set_image(&picture_key(&PictureKey {
 			png: png.as_deref(),
 			fallback: "sound",
-			title: &title,
-			title_at: &name_at,
-			frame: (k.s_truthy("showPlaying") && playing).then_some(Frame::On),
+			title,
+			title_at: &s.name_at,
+			frame: (s.show_playing && playing).then_some(Frame::On),
 			..Default::default()
 		}));
 	}
 
 	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
-		let Some(sound) = self.sound(k) else {
-			return Err(Error::from(if k.s_truthy("sound") { "This sound is gone from Voicenux" } else { "no sound selected" }));
+		let id = k.settings::<SoundSettings>().sound;
+		let Some(sound) = k.client.sound(&id) else {
+			return Err(Error::from(if id.is_empty() { "no sound selected" } else { "This sound is gone from Voicenux" }));
 		};
 		match press.op.as_str() {
 			"stop" => k.call("stop-sound", Some(&sound.id)).await.map(|_| ()),
@@ -112,6 +119,14 @@ pub static SOUND: Kind = Kind {
 // ----- A random sound. It picks the next one ahead, so the key can show it ("next"), or shows a -----
 // dice. Never the same sound twice in a row. look: "dice", or "next" (the picture of the sound the
 // next press plays).
+
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct RandomSoundSettings {
+	look: String,
+	show_name: bool,
+	name_at: String,
+}
 
 #[derive(Default)]
 struct RandomPick {
@@ -149,16 +164,17 @@ impl Behavior for RandomSound {
 	}
 
 	fn render(&self, k: &KeyRc) {
+		let s: RandomSoundSettings = k.settings();
 		let sound = self.next(k);
-		let Some(sound) = sound.filter(|_| k.s_str("look") == "next") else { return k.glyph_for_title("", "below") };
-		let title = if k.s_truthy("showName") { sound.name.clone() } else { String::new() };
-		k.own_title(&title);
+		let Some(sound) = sound.filter(|_| s.look == "next") else { return k.glyph_for_title("", "below") };
+		let title = if s.show_name { sound.name.as_str() } else { "" };
+		k.own_title(title);
 		let png = k.picture(&sound.icon);
 		k.set_image(&picture_key(&PictureKey {
 			png: png.as_deref(),
 			fallback: "sound",
-			title: &title,
-			title_at: &k.s_str("nameAt"),
+			title,
+			title_at: &s.name_at,
 			..Default::default()
 		}));
 	}
@@ -211,6 +227,17 @@ pub static STOP_SOUNDS: Kind = Kind {
 
 // ----- Volume of the soundboard: up, down or to a value. Hold keeps going by default. -----
 
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct SoundVolumeSettings {
+	/// Percent per press.
+	step: f64,
+	/// What "set" sets, in percent.
+	value: f64,
+	show_value: bool,
+	value_at: String,
+}
+
 struct SoundVolume;
 
 impl SoundVolume {
@@ -232,23 +259,25 @@ impl Behavior for SoundVolume {
 	}
 
 	fn render(&self, k: &KeyRc) {
+		let s: SoundVolumeSettings = k.settings();
 		let title = match k.vn().sound_volume {
-			Some(volume) if k.s_truthy("showValue") => format!("{}%", fmt(volume)),
+			Some(volume) if s.show_value => format!("{}%", fmt(volume)),
 			_ => String::new(),
 		};
 		k.own_title(&title);
-		k.set_image(&glyph_key(self.glyph_name(k), &GlyphKey { title: &title, title_at: &k.s_str("valueAt"), ..Default::default() }));
+		k.set_image(&glyph_key(self.glyph_name(k), &GlyphKey { title: &title, title_at: &s.value_at, ..Default::default() }));
 	}
 
 	async fn on_press(&self, k: &KeyRc, press: Press) -> Res<()> {
+		let s: SoundVolumeSettings = k.settings();
 		let mode = press.op;
 		let now = k.vn().sound_volume.unwrap_or(0.0);
 		if mode == "set" {
 			if !press.repeat {
-				k.call("sound-volume", Some(&fmt(clamp(k.s_num("value"))))).await?;
+				k.call("sound-volume", Some(&fmt(clamp(s.value)))).await?;
 			}
 		} else {
-			let step = js::number_or(k.s("step").as_ref(), 1.0).abs();
+			let step = or(s.step, 1.0).abs();
 			let next = clamp(now + if mode == "down" { -step } else { step });
 			if next != now {
 				k.call("sound-volume", Some(&fmt(next))).await?;
@@ -276,6 +305,14 @@ pub static SOUND_VOLUME: Kind = Kind {
 
 // ----- Stream Deck + dial: turn for the soundboard volume, press or touch to stop all sounds. -----
 // pressAction: "stop" all sounds, "hear" (hear the sounds yourself, on or off), or "nothing".
+
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct SoundVolumeDialSettings {
+	/// Percent per tick.
+	step: f64,
+	press_action: String,
+}
 
 struct SoundVolumeDial;
 
@@ -308,8 +345,8 @@ impl Behavior for SoundVolumeDial {
 
 	async fn on_dial_rotate(&self, k: &KeyRc, ticks: f64) -> Res<()> {
 		let now = k.vn().sound_volume.unwrap_or(0.0);
-		let step = js::number(k.s("step").as_ref()).abs();
-		let next = clamp(now + ticks * if js::truthy_num(step) { step } else { 1.0 });
+		let step = or(k.settings::<SoundVolumeDialSettings>().step.abs(), 1.0);
+		let next = clamp(now + ticks * step);
 		if next != now {
 			k.call("sound-volume", Some(&fmt(next))).await?;
 		}
@@ -318,7 +355,7 @@ impl Behavior for SoundVolumeDial {
 	}
 
 	async fn on_dial_down(&self, k: &KeyRc) -> Res<()> {
-		match k.s_str("pressAction").as_str() {
+		match k.settings::<SoundVolumeDialSettings>().press_action.as_str() {
 			"hear" => k.call("hear-sounds", Some("toggle")).await.map(|_| ()),
 			"nothing" => Ok(()),
 			_ => k.call("stop-sounds", None).await.map(|_| ()),
@@ -338,6 +375,15 @@ pub static SOUND_VOLUME_DIAL: Kind = Kind {
 mod tests {
 	use super::*;
 	use crate::actions::testing::*;
+	use crate::settings::testing::assert_defaults;
+
+	#[test]
+	fn every_setting_has_a_default() {
+		assert_defaults::<SoundSettings>(&[&SOUND]);
+		assert_defaults::<RandomSoundSettings>(&[&RANDOM_SOUND]);
+		assert_defaults::<SoundVolumeSettings>(&[&SOUND_VOLUME]);
+		assert_defaults::<SoundVolumeDialSettings>(&[&SOUND_VOLUME_DIAL]);
+	}
 
 	fn args(op: &str) -> Press {
 		Press { op: op.into(), repeat: false }

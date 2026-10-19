@@ -25,9 +25,11 @@
   built like [OBS Tools](https://github.com/FeloDeck/obs-tools): same base, settings pages, icons
   and tools. When something is fixed or improved in one, look if the other needs it too.
 - The plugin is Rust (`src/`) and talks to OpenDeck through the `openaction` crate. It runs on one
-  thread: every event is a task of its own (tokio `LocalSet`).
-  Never hold a `RefCell` borrow across an `.await`. Settings come from the settings pages as loose
-  JSON: read them with the helpers on `Key` and in `src/js.rs` (truthy, `Number()`, `String()`).
+  thread: every event is a task of its own (tokio `LocalSet`). Never hold a `RefCell` borrow across
+  an `.await`. Settings come from the settings pages as loose JSON ("5" for 5, null for ""). Each
+  action reads them into its own struct with `k.settings::<T>()` (`#[derive(Deserialize, Default)]`
+  and `#[serde(default, rename_all = "camelCase")]`): `src/settings.rs` reads every field the way
+  JavaScript would. Use `String`, `bool`, `f64` or `serde_json::Value` fields, nothing that can fail.
 - `make package` builds for x86_64 and aarch64 with an old glibc (2.28), so it runs on older
   distributions too. It needs zig, `cargo-zigbuild` and the Rust library for aarch64 (Arch:
   `rust-aarch64-gnu`). `make install` only builds for this PC. Dev tools are Rust too:
@@ -56,7 +58,8 @@
   the plugin (German texts, glyphs) comes from Rust through `pi/lib/shared.js`. `pi/lib/render.js`
   draws the same key pictures as `src/render.rs`: change both, `make check` compares them.
 - Settings pages come from `pi/schemas.js`. A new setting needs a default in the `defaults` of the
-  action (its `Kind` in `src/actions/`) and a field in the schema. The status line is on top; while Voicenux cannot be reached, a box below
+  action (its `Kind` in `src/actions/`), a field in its settings struct and a field in the schema.
+  The test `every_setting_has_a_default` checks that each field has a default. The status line is on top; while Voicenux cannot be reached, a box below
   it says what to do, with a button that runs `voicenux open settings`. The settings of the key
   follow in sections (`section` in `pi/schemas.js`): what the key is about, Controls, On the key,
   and closed sections for the rest. Use the own `dropdown()`, `checkbox()` and number stepper in
