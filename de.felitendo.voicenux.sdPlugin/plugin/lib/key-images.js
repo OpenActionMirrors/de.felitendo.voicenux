@@ -11,8 +11,6 @@ export const KEY_IMAGES = {
 	sound: { glyph: "sound" },
 	voicechanger: { glyph: "voicechanger", color: G },
 	"voicechanger-on": { glyph: "voicechanger" },
-	ownvoice: { glyph: "ownVoice", color: G },
-	"ownvoice-on": { glyph: "ownVoice" },
 	unmuted: { glyph: "mic" },
 	muted: { glyph: "micOff", color: COLORS.red },
 	hearmyself: { glyph: "headphones", color: G },

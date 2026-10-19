@@ -13,10 +13,6 @@
 		"Name": "Stimmverzerrer",
 		"Tooltip": "Den Stimmverzerrer an- oder ausschalten, oder zum Verzerren drücken."
 	},
-	"de.felitendo.voicenux.ownvoice": {
-		"Name": "Eigene Stimme",
-		"Tooltip": "Zurück zur eigenen Stimme: schaltet den Stimmverzerrer aus, egal welche Stimme an ist. Weiß, solange eine Stimme an ist."
-	},
 	"de.felitendo.voicenux.mute": {
 		"Name": "Stummschalten",
 		"Tooltip": "Dein Mikrofon stumm- oder lautschalten, oder zum Sprechen drücken."

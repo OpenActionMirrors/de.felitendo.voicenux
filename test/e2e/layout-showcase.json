@@ -12,7 +12,7 @@
 		"9": { "action": "de.felitendo.voicenux.soundvolume" },
 		"10": { "action": "de.felitendo.voicenux.voicechanger" },
 		"11": { "action": "de.felitendo.voicenux.mute" },
-		"12": { "action": "de.felitendo.voicenux.ownvoice" },
+		"12": { "action": "de.felitendo.voicenux.hearmyself" },
 		"13": { "action": "de.felitendo.voicenux.randomvoice" },
 		"14": { "action": "de.felitendo.voicenux.nextvoice", "settings": { "look": "voice" } }
 	},

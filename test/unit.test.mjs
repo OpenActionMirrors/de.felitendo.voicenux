@@ -6,7 +6,7 @@ import path from "node:path";
 import { test } from "node:test";
 
 import { ACTIONS } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/index.js";
-import { Mute, OwnVoice, VoiceChanger } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/switches.js";
+import { Mute, VoiceChanger } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/switches.js";
 import { Sound, SoundVolume } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/sounds.js";
 import { NextVoice, RandomVoice, Voice, VoiceDial } from "../de.felitendo.voicenux.sdPlugin/plugin/actions/voices.js";
 import { LANGUAGES, setLanguage, t, translateMessage } from "../de.felitendo.voicenux.sdPlugin/plugin/lib/i18n.js";
@@ -158,16 +158,6 @@ test("switches and mute send on, off or toggle", async () => {
 	await mute.action.onRelease();
 	assert.deepEqual(mute.client.calls.at(-1), ["mute", "on"]);
 	await key(NextVoice, { direction: "previous" }).action.onPress();
-});
-
-test("the own voice key turns the voice changer off, and shows if a voice is on", async () => {
-	const { action, client } = key(OwnVoice);
-	// A key draws right after it connected, one tick later.
-	await new Promise((resolve) => setImmediate(resolve));
-	assert.equal(action.state, 1);
-	await action.onPress();
-	assert.deepEqual(client.calls, [["voice-changer", "off"]]);
-	assert.equal(action.state, 0);
 });
 
 test("push to change voice: on while held, off when let go", async () => {

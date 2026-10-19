@@ -14,8 +14,6 @@ const speaker = `<path d="M3.5 9.2h3.2L11.5 5v14l-4.8-4.2H3.5a1 1 0 0 1-1-1v-3.6
 const bar = (x, y, h) => `<rect x="${x}" y="${y}" width="3" height="${h}" rx="1.5" ${fill} stroke="none"/>`;
 const capsule = `<rect x="8" y="1.8" width="8" height="13" rx="4"/>`;
 const cups = `<path d="M3 13.5h3.2a1.3 1.3 0 0 1 1.3 1.3v5.4a1.3 1.3 0 0 1-1.3 1.3H4.3A1.3 1.3 0 0 1 3 20.2zM21 13.5h-3.2a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3h1.9a1.3 1.3 0 0 0 1.3-1.3z" ${fill} stroke-width="1.4"/>`;
-const mask = `<path d="M3 4.2c2.6-1.6 15.4-1.6 18 0v6.6c0 6.2-4.3 10.6-9 10.6S3 17 3 10.8z" stroke="#FFF" stroke-width="1.2" stroke-linejoin="round"/>`;
-const face = `<path d="M6.6 9.6c.8-.9 2.4-.9 3.2 0M14.2 9.6c.8-.9 2.4-.9 3.2 0M8 14.6c2 2.3 6 2.3 8 0"/>`;
 const pip = (x, y) => `<circle cx="${x}" cy="${y}" r="1.75" fill="#000" stroke="none"/>`;
 
 export const GLYPHS = {
@@ -23,9 +21,11 @@ export const GLYPHS = {
 	plugin: bar(2, 6, 12) + bar(6.75, 9.5, 8.5) + bar(10.5, 13, 5) + bar(14.25, 9.5, 8.5) + bar(19, 6, 12),
 	voicechanger: bar(2, 3.5, 17) + bar(6.75, 7.5, 9) + bar(10.5, 10, 4) + bar(14.25, 7.5, 9) + bar(19, 3.5, 17),
 	// A mask: a voice that is not yours.
-	voice: cut("voice", mask, face),
-	// The mask struck through: no voice on, your own one.
-	ownVoice: cut("ownVoice", mask, `${face}<path d="m3 3 18 18" stroke-width="6"/>`, `<path d="m3 3 18 18"/>`),
+	voice: cut(
+		"voice",
+		`<path d="M3 4.2c2.6-1.6 15.4-1.6 18 0v6.6c0 6.2-4.3 10.6-9 10.6S3 17 3 10.8z" stroke="#FFF" stroke-width="1.2" stroke-linejoin="round"/>`,
+		`<path d="M6.6 9.6c.8-.9 2.4-.9 3.2 0M14.2 9.6c.8-.9 2.4-.9 3.2 0M8 14.6c2 2.3 6 2.3 8 0"/>`,
+	),
 	// Two beamed notes.
 	sound: `<path d="M8.6 17.6V6.2l11-2.4v11.4" stroke-width="2.6"/><path d="M8.6 6.2l11-2.4v3.6l-11 2.4z" ${fill} stroke-width="1.4"/><ellipse cx="6" cy="17.8" rx="3.4" ry="2.8" ${fill} stroke="none"/><ellipse cx="17" cy="15.4" rx="3.4" ry="2.8" ${fill} stroke="none"/>`,
 	mic: `${capsule.replace("/>", ` ${fill} stroke="none"/>`)}<path d="M4.6 11.2a7.4 7.4 0 0 0 14.8 0M12 18.6v3.2"/>`,
