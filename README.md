@@ -63,13 +63,14 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 ## Actions
 
 <details>
-<summary>All 13 actions</summary>
+<summary>All 14 actions</summary>
 
 | Action | What it does |
 |---|---|
 | Voice | Turn a voice on or off (off is your own voice), use it only while you hold the key, or star it. |
 | Sound | Play a sound from the start, on top, or play and stop it. |
 | Voice Changer | Turn the voice changer on or off, or push to change your voice. |
+| Own Voice | Back to your own voice, whatever voice is on. White while a voice is on. |
 | Mute | Mute or unmute your microphone, push to talk or push to mute. |
 | Hear Myself | Hear your changed voice in your headphones. |
 | Random Voice | A random voice, out of your favorites when you have two or more. |

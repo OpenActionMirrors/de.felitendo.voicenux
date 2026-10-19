@@ -81,6 +81,29 @@
 			]
 		},
 		{
+			"UUID": "de.felitendo.voicenux.ownvoice",
+			"Name": "Own Voice",
+			"Icon": "images/actions/ownVoice",
+			"Tooltip": "Back to your own voice: turns the voice changer off, whatever voice is on. White while a voice is on.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/ownvoice",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				},
+				{
+					"Image": "images/keys/ownvoice-on",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
 			"UUID": "de.felitendo.voicenux.mute",
 			"Name": "Mute",
 			"Icon": "images/actions/mic",

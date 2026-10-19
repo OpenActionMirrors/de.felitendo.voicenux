@@ -68,6 +68,26 @@ export class HearSounds extends Switch {
 	static api = "hear-sounds";
 }
 
+// Back to your own voice: turns the voice changer off, whatever voice is on. White while a voice
+// is on, gray when you already speak with your own voice.
+export class OwnVoice extends Action {
+	static uuid = `${ID}.ownvoice`;
+	static defaults = {};
+
+	renderOffline() {
+		this.setState(0);
+	}
+
+	render() {
+		this.setState(this.vn.voice_changer ? 1 : 0);
+	}
+
+	async onPress() {
+		await this.call("voice-changer", "off");
+		this.render();
+	}
+}
+
 // Mutes the microphone. Red when muted. talk: on only while the key is held (push to talk).
 // holdMute: muted only while held.
 export class Mute extends Action {

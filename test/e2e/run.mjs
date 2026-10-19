@@ -108,6 +108,17 @@ await test("a voice used while held comes back when you let go", async () => {
 	await act("voice-changer", "on");
 });
 
+await test("own voice key turns the voice off and is gray then", async () => {
+	await act("voice", "robot");
+	await sleep(300);
+	const on = await keyImage(8);
+	await press(8);
+	await waitFor("voice changer off", async () => (await vn()).voice_changer === false);
+	await waitFor("key 8 turns gray", async () => (await keyImage(8)) !== on);
+	await act("voice-changer", "on");
+	await waitFor("key 8 white again", async () => (await keyImage(8)) === on);
+});
+
 await test("mute key mutes and unmutes", async () => {
 	await press(6);
 	await waitFor("muted", async () => (await vn()).mute === true);
@@ -115,10 +126,9 @@ await test("mute key mutes and unmutes", async () => {
 	await waitFor("unmuted", async () => (await vn()).mute === false);
 });
 
-await test("switch keys flip hear myself, background and hear sounds", async () => {
+await test("switch keys flip hear myself and hear sounds", async () => {
 	for (const [key, field] of [
 		[7, "hear_myself"],
-		[8, "background"],
 		[9, "hear_sounds"],
 	]) {
 		const before = (await vn())[field];

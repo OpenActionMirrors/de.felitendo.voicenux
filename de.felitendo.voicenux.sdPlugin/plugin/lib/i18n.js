@@ -120,6 +120,7 @@ const DE = {
 	"Play on top: every press starts it once more, over the one that still plays.": "Übereinander abspielen: Jeder Druck startet ihn noch einmal, über dem, der noch läuft.",
 	"Play on top needs a newer Voicenux": "Übereinander abspielen braucht ein neueres Voicenux",
 	"While the sound plays": "Solange der Sound läuft",
+	"Back to your own voice: turns the voice changer off, whatever voice is on. The key is white while a voice is on.": "Zurück zur eigenen Stimme: Schaltet den Stimmverzerrer aus, egal welche Stimme an ist. Die Taste ist weiß, solange eine Stimme an ist.",
 	"Turns the voice changer on or off. When it is off, others hear your own voice.": "Schaltet den Stimmverzerrer an oder aus. Ist er aus, hören andere deine echte Stimme.",
 	"Mutes your microphone in Voicenux. Others hear nothing, sounds of the soundboard still play.": "Schaltet dein Mikrofon in Voicenux stumm. Andere hören dich nicht, Sounds vom Soundboard laufen weiter.",
 	Mute: "Stummschalten",

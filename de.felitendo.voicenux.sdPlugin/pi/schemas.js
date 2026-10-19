@@ -164,6 +164,10 @@ export const SCHEMAS = {
 		"Push for my own voice",
 		"Push to change voice: others hear your own voice, and the changed one only while you hold the key. Push for my own voice is the other way round.",
 	]),
+	[`${ID}.ownvoice`]: {
+		help: "Back to your own voice: turns the voice changer off, whatever voice is on. The key is white while a voice is on.",
+		fields: [],
+	},
 	[`${ID}.mute`]: {
 		help: "Mutes your microphone in Voicenux. Others hear nothing, sounds of the soundboard still play.",
 		fields: [
