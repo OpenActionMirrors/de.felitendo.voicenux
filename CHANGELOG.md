@@ -4,6 +4,8 @@ What each release brings, newest first.
 
 ## v0.1.0
 
+_19 October 2026_
+
 Welcome to Voicenux for OpenDeck `v0.1.0`! Control the Voicenux voice changer from your Stream Deck on Linux.
 
 ### Highlights
