@@ -67,7 +67,7 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 
 | Action | What it does |
 |---|---|
-| Voice | Use a voice, or only while you hold the key. Can also go back to your own voice on the next press, or star it. |
+| Voice | Turn a voice on or off (off is your own voice), use it only while you hold the key, or star it. |
 | Sound | Play a sound of the soundboard, or stop it. |
 | Voice Changer | Turn the voice changer on or off, or push to change your voice. |
 | Mute | Mute or unmute your microphone, push to talk or push to mute. |

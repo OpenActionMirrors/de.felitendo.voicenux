@@ -17,7 +17,7 @@ const dial = (icon, layout, trigger) => ({
 // [uuid, name, icon, tooltip, states, extra]. OpenDeck lists the actions in this order:
 // the ones people use most come first.
 const actions = [
-	["voice", "Voice", "voice", "Use a voice, also only while you hold the key. Shows its picture, with a frame while it is in use.", [state("voice")]],
+	["voice", "Voice", "voice", "Turn a voice on or off, or use it only while you hold the key. Shows its picture, with a frame while it is in use.", [state("voice")]],
 	["sound", "Sound", "sound", "Play a sound of the soundboard. Shows its picture, with a frame while it plays.", [state("sound")]],
 	["voicechanger", "Voice Changer", "voicechanger", "Turn the voice changer on or off, or push to change your voice.", [state("voicechanger"), state("voicechanger-on")]],
 	["mute", "Mute", "mic", "Mute or unmute your microphone, or push to talk.", [state("unmuted"), state("muted")]],
@@ -34,7 +34,7 @@ const actions = [
 
 // OpenDeck shows these names and tooltips when its language is German.
 const de = {
-	voice: ["Stimme", "Eine Stimme nehmen, auch nur solange du die Taste hältst. Zeigt ihr Bild, mit Rahmen, solange sie aktiv ist."],
+	voice: ["Stimme", "Eine Stimme an- oder ausschalten, oder nur nehmen, solange du die Taste hältst. Zeigt ihr Bild, mit Rahmen, solange sie aktiv ist."],
 	sound: ["Sound", "Einen Sound vom Soundboard abspielen. Zeigt sein Bild, mit Rahmen, solange er läuft."],
 	voicechanger: ["Stimmverzerrer", "Den Stimmverzerrer an- oder ausschalten, oder zum Verzerren drücken."],
 	mute: ["Stummschalten", "Dein Mikrofon stumm- oder lautschalten, oder zum Sprechen drücken."],

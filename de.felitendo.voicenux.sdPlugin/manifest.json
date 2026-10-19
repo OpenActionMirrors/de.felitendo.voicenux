@@ -25,7 +25,7 @@
 			"UUID": "de.felitendo.voicenux.voice",
 			"Name": "Voice",
 			"Icon": "images/actions/voice",
-			"Tooltip": "Use a voice, also only while you hold the key. Shows its picture, with a frame while it is in use.",
+			"Tooltip": "Turn a voice on or off, or use it only while you hold the key. Shows its picture, with a frame while it is in use.",
 			"Controllers": [
 				"Keypad"
 			],

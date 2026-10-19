@@ -91,8 +91,8 @@ test("press, hold and double press offer only known choices", () => {
 });
 
 test("gestures fall back to the first choice", () => {
-	assert.equal(key(Voice).action.gesture("press"), "use");
-	assert.equal(key(Voice, { press: "nope" }).action.gesture("press"), "use");
+	assert.equal(key(Voice).action.gesture("press"), "toggle");
+	assert.equal(key(Voice, { press: "nope" }).action.gesture("press"), "toggle");
 	assert.equal(key(Voice, { hold: "favorite" }).action.gesture("hold"), "favorite");
 	assert.equal(key(RandomVoice).action.gesture("press"), "random");
 	assert.equal(key(SoundVolume).action.gesture("hold"), "repeat");
@@ -174,7 +174,7 @@ test("a voice used while held gives the voice from before back", async () => {
 	await action.onRelease();
 	assert.deepEqual(client.calls.slice(-2), [["voice", "robot"], ["voice-changer", "off"]]);
 	// A short press of another kind of voice key leaves the voice as it is.
-	const use = key(Voice, { voice: "deep" });
+	const use = key(Voice, { voice: "deep", press: "use" });
 	await use.action.onPress();
 	await use.action.onRelease();
 	assert.deepEqual(use.client.calls, [["voice", "deep"]]);

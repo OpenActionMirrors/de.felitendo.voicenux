@@ -11,12 +11,12 @@ const PICK_TIMEOUT = 6000;
 export class Voice extends PictureAction {
 	static uuid = `${ID}.voice`;
 	static required = ["voice"];
-	// use: this voice. toggle: this voice, or back to your own when it is in use. favorite: star it.
-	// whileHeld: this voice while the key is held, then back to the voice from before.
+	// toggle: this voice, or your own voice when it is in use. use: always this voice.
+	// whileHeld: this voice while the key is held, then back to the voice from before. favorite: star it.
 	static pressKey = "press";
-	static ops = ["use", "toggle", "favorite", "whileHeld"];
+	static ops = ["toggle", "use", "whileHeld", "favorite"];
 	static pressOnly = ["whileHeld"];
-	static defaults = { voice: "", press: "use", hold: "none", double: "none", showName: true, nameAt: "below", showFrame: true };
+	static defaults = { voice: "", press: "toggle", hold: "none", double: "none", showName: true, nameAt: "below", showFrame: true };
 
 	voice() {
 		return this.client.voice(this.settings.voice);

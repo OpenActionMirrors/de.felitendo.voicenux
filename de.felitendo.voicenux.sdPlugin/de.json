@@ -3,7 +3,7 @@
 	"Description": "Steuere den Stimmverzerrer Voicenux mit OpenDeck: Stimmen mit Bild, das Soundboard, Stummschalten, zum Sprechen und zum Verzerren drücken.",
 	"de.felitendo.voicenux.voice": {
 		"Name": "Stimme",
-		"Tooltip": "Eine Stimme nehmen, auch nur solange du die Taste hältst. Zeigt ihr Bild, mit Rahmen, solange sie aktiv ist."
+		"Tooltip": "Eine Stimme an- oder ausschalten, oder nur nehmen, solange du die Taste hältst. Zeigt ihr Bild, mit Rahmen, solange sie aktiv ist."
 	},
 	"de.felitendo.voicenux.sound": {
 		"Name": "Sound",

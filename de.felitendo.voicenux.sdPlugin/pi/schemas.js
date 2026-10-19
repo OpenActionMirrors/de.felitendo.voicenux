@@ -129,13 +129,14 @@ export const SCHEMAS = {
 			...gestures(
 				"press",
 				[
+					["toggle", "This voice on or off"],
 					["use", "Use this voice"],
-					["toggle", "Use it, or back to my own voice"],
 					["whileHeld", "Use it while held"],
 					["favorite", "Star or unstar it"],
 				],
 				{ pressOnly: ["whileHeld"] },
 			),
+			{ type: "note", text: "Off means your own voice: the voice changer turns off.", showIf: (s) => uses(s, "press", ["toggle"], "toggle"), section: CONTROLS },
 			{ type: "note", text: "Use it while held: when you let go of the key, the voice from before comes back.", showIf: (s) => s.press === "whileHeld", section: CONTROLS },
 			titleTiles("Name", "showName", "nameAt", itemKey("voices", "voice", () => null)),
 			{ key: "showFrame", section: LOOK, label: "Frame", type: "checkbox", text: "While the voice is in use" },
