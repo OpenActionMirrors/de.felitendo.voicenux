@@ -2,6 +2,20 @@
 
 What each release brings, newest first.
 
+## v0.2.0
+
+_19 October 2026_
+
+Welcome to Voicenux for OpenDeck `v0.2.0`! The plugin no longer needs Node.js.
+
+### Highlights
+
+- Install it and it runs, without Node.js
+- Runs on ARM64 computers too
+- Works on older Linux distributions
+- Your keys and settings stay as they are
+- Playing a sound on top works with Voicenux 0.2.0
+
 ## v0.1.0
 
 _19 October 2026_
