@@ -76,9 +76,15 @@ const ID = "de.felitendo.voicenux";
 // Every dial: a touch does what a press does, unless touches are off.
 const TOUCH = { key: "disableTouch", label: "Touch screen", type: "checkbox", text: "Ignore touches", section: MORE };
 
-const switchSchema = (glyph, help) => ({
+// held: the names of the two choices that hold the switch only while the key is held, and the note.
+const HELD = ["On only while held", "Off only while held", "On only while held: it turns off again when you let go of the key. Off only while held is the other way round."];
+const switchSchema = (glyph, help, [holdOn, holdOff, note] = HELD) => ({
 	help,
-	fields: [...gestures("mode", TOGGLE), stateTiles("On or off", () => glyph, "On")],
+	fields: [
+		...gestures("mode", [...TOGGLE, ["holdOn", holdOn], ["holdOff", holdOff]], { pressOnly: ["holdOn", "holdOff"] }),
+		{ type: "note", text: note, showIf: (s) => ["holdOn", "holdOff"].includes(s.mode), section: CONTROLS },
+		stateTiles("On or off", () => glyph, "On"),
+	],
 });
 
 const stepSchema = (first) => ({
@@ -120,11 +126,17 @@ export const SCHEMAS = {
 	[`${ID}.voice`]: {
 		fields: [
 			{ key: "voice", label: "Voice", type: "select", list: "voices" },
-			...gestures("press", [
-				["use", "Use this voice"],
-				["toggle", "Use it, or back to my own voice"],
-				["favorite", "Star or unstar it"],
-			]),
+			...gestures(
+				"press",
+				[
+					["use", "Use this voice"],
+					["toggle", "Use it, or back to my own voice"],
+					["whileHeld", "Use it while held"],
+					["favorite", "Star or unstar it"],
+				],
+				{ pressOnly: ["whileHeld"] },
+			),
+			{ type: "note", text: "Use it while held: when you let go of the key, the voice from before comes back.", showIf: (s) => s.press === "whileHeld", section: CONTROLS },
 			titleTiles("Name", "showName", "nameAt", itemKey("voices", "voice", () => null)),
 			{ key: "showFrame", section: LOOK, label: "Frame", type: "checkbox", text: "While the voice is in use" },
 			{ type: "note", text: "The frame turns gray while the voice changer is off.", section: LOOK, showIf: (s) => s.showFrame !== false },
@@ -143,7 +155,11 @@ export const SCHEMAS = {
 			{ key: "showPlaying", section: LOOK, label: "Frame", type: "checkbox", text: "While the sound plays" },
 		],
 	},
-	[`${ID}.voicechanger`]: switchSchema("voicechanger", "Turns the voice changer on or off. When it is off, others hear your own voice."),
+	[`${ID}.voicechanger`]: switchSchema("voicechanger", "Turns the voice changer on or off. When it is off, others hear your own voice.", [
+		"Push to change voice",
+		"Push for my own voice",
+		"Push to change voice: others hear your own voice, and the changed one only while you hold the key. Push for my own voice is the other way round.",
+	]),
 	[`${ID}.mute`]: {
 		help: "Mutes your microphone in Voicenux. Others hear nothing, sounds of the soundboard still play.",
 		fields: [

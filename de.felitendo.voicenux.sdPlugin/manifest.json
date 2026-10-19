@@ -4,7 +4,7 @@
 	"Name": "Voicenux",
 	"Version": "0.1.0",
 	"Author": "Felitendo",
-	"Description": "Control the Voicenux voice changer from OpenDeck: voices with their pictures, the soundboard, mute and push to talk.",
+	"Description": "Control the Voicenux voice changer from OpenDeck: voices with their pictures, the soundboard, mute, push to talk and push to change your voice.",
 	"URL": "https://github.com/FeloDeck/voicenux-plugin",
 	"Icon": "images/plugin",
 	"Category": "Voicenux",
@@ -25,7 +25,7 @@
 			"UUID": "de.felitendo.voicenux.voice",
 			"Name": "Voice",
 			"Icon": "images/actions/voice",
-			"Tooltip": "Use a voice. Shows its picture, with a frame while it is in use.",
+			"Tooltip": "Use a voice, also only while you hold the key. Shows its picture, with a frame while it is in use.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -61,7 +61,7 @@
 			"UUID": "de.felitendo.voicenux.voicechanger",
 			"Name": "Voice Changer",
 			"Icon": "images/actions/voicechanger",
-			"Tooltip": "Turn the voice changer on or off.",
+			"Tooltip": "Turn the voice changer on or off, or push to change your voice.",
 			"Controllers": [
 				"Keypad"
 			],

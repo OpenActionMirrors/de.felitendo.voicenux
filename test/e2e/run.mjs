@@ -77,13 +77,35 @@ await test("pressed again, the toggle voice key goes back to your own voice", as
 	});
 });
 
-await test("voice changer key turns it off and on", async () => {
-	const img = await keyImage(5);
-	await press(5);
-	await waitFor("voice changer off", async () => (await vn()).voice_changer === false);
-	await waitFor("key 5 turns gray", async () => (await keyImage(5)) !== img);
-	await press(5);
+await test("push to change voice: changed only while the key is held", async () => {
+	await act("voice-changer", "off");
+	await sleep(300);
+	const off = await keyImage(5);
+	await post(`${DECK}/api/key/5/down`);
 	await waitFor("voice changer on", async () => (await vn()).voice_changer === true);
+	await waitFor("key 5 turns white", async () => (await keyImage(5)) !== off);
+	await post(`${DECK}/api/key/5/up`);
+	await waitFor("voice changer off", async () => (await vn()).voice_changer === false);
+	await act("voice-changer", "on");
+});
+
+await test("a voice used while held comes back when you let go", async () => {
+	await act("voice", "robot");
+	// Voicenux tells the plugin about changes made elsewhere a little later.
+	await sleep(300);
+	await post(`${DECK}/api/key/2/down`);
+	await waitFor("voice = chipmunk", async () => (await vn()).voice.id === "chipmunk");
+	await sleep(300);
+	await post(`${DECK}/api/key/2/up`);
+	await waitFor("voice = robot", async () => (await vn()).voice.id === "robot");
+	await act("voice-changer", "off");
+	await sleep(300);
+	await press(2, 300);
+	await waitFor("voice changer off again", async () => {
+		const s = await vn();
+		return s.voice.id === "robot" && !s.voice_changer;
+	});
+	await act("voice-changer", "on");
 });
 
 await test("mute key mutes and unmutes", async () => {

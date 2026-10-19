@@ -2,10 +2,10 @@
 	"keys": {
 		"0": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "robot" } },
 		"1": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "deep", "press": "toggle" } },
-		"2": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "chipmunk", "showName": false } },
+		"2": { "action": "de.felitendo.voicenux.voice", "settings": { "voice": "chipmunk", "showName": false, "press": "whileHeld" } },
 		"3": { "action": "de.felitendo.voicenux.sound", "settings": { "sound": "bruh" } },
 		"4": { "action": "de.felitendo.voicenux.sound", "settings": { "sound": "sad-violin", "press": "toggle" } },
-		"5": { "action": "de.felitendo.voicenux.voicechanger" },
+		"5": { "action": "de.felitendo.voicenux.voicechanger", "settings": { "mode": "holdOn" } },
 		"6": { "action": "de.felitendo.voicenux.mute" },
 		"7": { "action": "de.felitendo.voicenux.hearmyself" },
 		"8": { "action": "de.felitendo.voicenux.background", "settings": { "showState": true } },

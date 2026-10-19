@@ -7,7 +7,7 @@
 <h3 align="center">Control your voice changer from your Stream Deck. Made for Linux.</h3>
 
 <p align="center">
-  Voices with their pictures, the soundboard, mute and push to talk for <a href="https://github.com/voicenux/voicenux">Voicenux</a>, on <a href="https://github.com/nekename/OpenDeck">OpenDeck</a>.
+  Voices with their pictures, the soundboard, mute, push to talk and push to change your voice for <a href="https://github.com/voicenux/voicenux">Voicenux</a>, on <a href="https://github.com/nekename/OpenDeck">OpenDeck</a>.
 </p>
 
 <h5 align="center">
@@ -67,9 +67,9 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 
 | Action | What it does |
 |---|---|
-| Voice | Use a voice. Can also go back to your own voice on the next press, or star it. |
+| Voice | Use a voice, or only while you hold the key. Can also go back to your own voice on the next press, or star it. |
 | Sound | Play a sound of the soundboard, or stop it. |
-| Voice Changer | Turn the voice changer on or off. |
+| Voice Changer | Turn the voice changer on or off, or push to change your voice. |
 | Mute | Mute or unmute your microphone, push to talk or push to mute. |
 | Hear Myself | Hear your changed voice in your headphones. |
 | Random Voice | A random voice, out of your favorites when you have two or more. |
@@ -81,7 +81,7 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 | Voice (Dial) | Turn to pick a voice (with its picture), press to use it. Only favorites if you like. |
 | Soundboard Volume (Dial) | Turn for the soundboard volume, press to stop all sounds. |
 
-Most keys can do one thing on press, another on hold and another on double press. Keys that turn something on or off can also only turn it on, or only off. That helps in multi actions.
+Most keys can do one thing on press, another on hold and another on double press. Keys that turn something on or off can also only turn it on, or only off (that helps in multi actions), or keep it on only while you hold the key.
 
 </details>
 

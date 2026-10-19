@@ -17,9 +17,9 @@ const dial = (icon, layout, trigger) => ({
 // [uuid, name, icon, tooltip, states, extra]. OpenDeck lists the actions in this order:
 // the ones people use most come first.
 const actions = [
-	["voice", "Voice", "voice", "Use a voice. Shows its picture, with a frame while it is in use.", [state("voice")]],
+	["voice", "Voice", "voice", "Use a voice, also only while you hold the key. Shows its picture, with a frame while it is in use.", [state("voice")]],
 	["sound", "Sound", "sound", "Play a sound of the soundboard. Shows its picture, with a frame while it plays.", [state("sound")]],
-	["voicechanger", "Voice Changer", "voicechanger", "Turn the voice changer on or off.", [state("voicechanger"), state("voicechanger-on")]],
+	["voicechanger", "Voice Changer", "voicechanger", "Turn the voice changer on or off, or push to change your voice.", [state("voicechanger"), state("voicechanger-on")]],
 	["mute", "Mute", "mic", "Mute or unmute your microphone, or push to talk.", [state("unmuted"), state("muted")]],
 	["hearmyself", "Hear Myself", "headphones", "Hear your changed voice in your headphones, on or off.", [state("hearmyself"), state("hearmyself-on")]],
 	["randomvoice", "Random Voice", "random", "Use a random voice, out of your favorites when you have two or more.", [state("random")]],
@@ -34,9 +34,9 @@ const actions = [
 
 // OpenDeck shows these names and tooltips when its language is German.
 const de = {
-	voice: ["Stimme", "Eine Stimme nehmen. Zeigt ihr Bild, mit Rahmen, solange sie aktiv ist."],
+	voice: ["Stimme", "Eine Stimme nehmen, auch nur solange du die Taste hältst. Zeigt ihr Bild, mit Rahmen, solange sie aktiv ist."],
 	sound: ["Sound", "Einen Sound vom Soundboard abspielen. Zeigt sein Bild, mit Rahmen, solange er läuft."],
-	voicechanger: ["Stimmverzerrer", "Den Stimmverzerrer an- oder ausschalten."],
+	voicechanger: ["Stimmverzerrer", "Den Stimmverzerrer an- oder ausschalten, oder zum Verzerren drücken."],
 	mute: ["Stummschalten", "Dein Mikrofon stumm- oder lautschalten, oder zum Sprechen drücken."],
 	hearmyself: ["Mich hören", "Deine verzerrte Stimme im Kopfhörer hören, an oder aus."],
 	randomvoice: ["Zufällige Stimme", "Eine zufällige Stimme nehmen, aus deinen Favoriten, sobald es mindestens zwei sind."],
@@ -57,7 +57,7 @@ const manifest = {
 	Name: "Voicenux",
 	Version: version,
 	Author: "Felitendo",
-	Description: "Control the Voicenux voice changer from OpenDeck: voices with their pictures, the soundboard, mute and push to talk.",
+	Description: "Control the Voicenux voice changer from OpenDeck: voices with their pictures, the soundboard, mute, push to talk and push to change your voice.",
 	URL: "https://github.com/FeloDeck/voicenux-plugin",
 	Icon: "images/plugin",
 	Category: "Voicenux",
@@ -82,7 +82,7 @@ const manifest = {
 
 const localized = {
 	Name: "Voicenux",
-	Description: "Steuere den Stimmverzerrer Voicenux mit OpenDeck: Stimmen mit Bild, das Soundboard, Stummschalten und zum Sprechen drücken.",
+	Description: "Steuere den Stimmverzerrer Voicenux mit OpenDeck: Stimmen mit Bild, das Soundboard, Stummschalten, zum Sprechen und zum Verzerren drücken.",
 	...Object.fromEntries(actions.map(([uuid]) => [`${ID}.${uuid}`, { Name: de[uuid][0], Tooltip: de[uuid][1] }])),
 };
 

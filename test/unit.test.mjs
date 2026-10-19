@@ -151,6 +151,35 @@ test("switches and mute send on, off or toggle", async () => {
 	await key(NextVoice, { direction: "previous" }).action.onPress();
 });
 
+test("push to change voice: on while held, off when let go", async () => {
+	const { action, client } = key(VoiceChanger, { mode: "holdOn", hold: "off" });
+	client.state.voice_changer = false;
+	// It uses key down and up, so there is no hold or double press.
+	assert.equal(action.gesture("hold"), "none");
+	await action.onPress();
+	assert.deepEqual(client.calls.at(-1), ["voice-changer", "on"]);
+	await action.onRelease();
+	assert.deepEqual(client.calls.at(-1), ["voice-changer", "off"]);
+	const own = key(VoiceChanger, { mode: "holdOff" });
+	await own.action.onPress();
+	await own.action.onRelease();
+	assert.deepEqual(own.client.calls, [["voice-changer", "off"], ["voice-changer", "on"]]);
+});
+
+test("a voice used while held gives the voice from before back", async () => {
+	const { action, client } = key(Voice, { voice: "deep", press: "whileHeld" });
+	client.state.voice_changer = false;
+	await action.onPress();
+	assert.deepEqual(client.calls.at(-1), ["voice", "deep"]);
+	await action.onRelease();
+	assert.deepEqual(client.calls.slice(-2), [["voice", "robot"], ["voice-changer", "off"]]);
+	// A short press of another kind of voice key leaves the voice as it is.
+	const use = key(Voice, { voice: "deep" });
+	await use.action.onPress();
+	await use.action.onRelease();
+	assert.deepEqual(use.client.calls, [["voice", "deep"]]);
+});
+
 test("the voice dial picks first and uses on press", async () => {
 	const { action, client } = key(VoiceDial, { list: "all" });
 	await action.onDialRotate(2);

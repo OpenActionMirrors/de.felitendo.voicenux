@@ -12,8 +12,10 @@ export class Voice extends PictureAction {
 	static uuid = `${ID}.voice`;
 	static required = ["voice"];
 	// use: this voice. toggle: this voice, or back to your own when it is in use. favorite: star it.
+	// whileHeld: this voice while the key is held, then back to the voice from before.
 	static pressKey = "press";
-	static ops = ["use", "toggle", "favorite"];
+	static ops = ["use", "toggle", "favorite", "whileHeld"];
+	static pressOnly = ["whileHeld"];
 	static defaults = { voice: "", press: "use", hold: "none", double: "none", showName: true, nameAt: "below", showFrame: true };
 
 	voice() {
@@ -45,6 +47,7 @@ export class Voice extends PictureAction {
 		const voice = this.voice();
 		if (!voice) throw new Error(this.settings.voice ? "This voice is gone from Voicenux" : "no voice selected");
 		const op = this.op(args);
+		if (op === "whileHeld" && !this.isInMultiAction) this.before = { id: this.vn.voice?.id, on: !!this.vn.voice_changer };
 		if (op === "favorite") {
 			await this.call("favorite", voice.id);
 			this.showOk();
@@ -53,6 +56,15 @@ export class Voice extends PictureAction {
 		} else {
 			await this.call("voice", voice.id);
 		}
+		this.render();
+	}
+
+	async onRelease() {
+		const before = this.before;
+		this.before = null;
+		if (!before || this.gesture("press") !== "whileHeld") return;
+		if (before.id && before.id !== this.vn.voice?.id) await this.call("voice", before.id);
+		if (!before.on) await this.call("voice-changer", "off");
 		this.render();
 	}
 }

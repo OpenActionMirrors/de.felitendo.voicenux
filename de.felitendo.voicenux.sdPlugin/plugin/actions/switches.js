@@ -4,12 +4,14 @@ import { t } from "../lib/i18n.js";
 const ID = "de.felitendo.voicenux";
 
 // A switch of Voicenux: on, off or toggle. White when on, gray when off.
+// holdOn: on only while the key is held, like push to talk. holdOff: off only while held.
 // field: its name in the state, api: its action in the API.
 class Switch extends Action {
 	static field = "";
 	static api = "";
 	static pressKey = "mode";
-	static ops = ["toggle", "on", "off"];
+	static ops = ["toggle", "on", "off", "holdOn", "holdOff"];
+	static pressOnly = ["holdOn", "holdOff"];
 	static defaults = { mode: "toggle", hold: "none", double: "none", showState: false, stateAt: "below" };
 
 	isOn() {
@@ -28,7 +30,16 @@ class Switch extends Action {
 	}
 
 	async onPress(args) {
-		await this.call(this.constructor.api, this.op(args));
+		const op = this.op(args);
+		await this.call(this.constructor.api, op === "holdOn" ? "on" : op === "holdOff" ? "off" : op);
+		this.render();
+	}
+
+	async onRelease() {
+		if (this.isInMultiAction) return;
+		const mode = this.gesture("press");
+		if (mode !== "holdOn" && mode !== "holdOff") return;
+		await this.call(this.constructor.api, mode === "holdOn" ? "off" : "on");
 		this.render();
 	}
 }
