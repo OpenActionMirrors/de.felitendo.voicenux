@@ -14,7 +14,7 @@
   <a href="#install">Install</a> |
   <a href="#how-to-use">How to use</a> |
   <a href="#actions">Actions</a> |
-  <a href="https://github.com/FeloDeck/voicenux-plugin/issues">Report a bug</a>
+  <a href="https://github.com/voicenux/voicenux-plugin/issues">Report a bug</a>
 </h5>
 
 <p align="center">
@@ -29,13 +29,13 @@
 
 You need OpenDeck 2, Node.js 22 or newer and Voicenux 0.1.0 or newer.
 
-Download `de.felitendo.voicenux.streamDeckPlugin` from the [latest release](https://github.com/FeloDeck/voicenux-plugin/releases/latest) and install it on the **Plugins** page of OpenDeck.
+Download `de.felitendo.voicenux.streamDeckPlugin` from the [latest release](https://github.com/voicenux/voicenux-plugin/releases/latest) and install it on the **Plugins** page of OpenDeck.
 
 <details>
 <summary>From source</summary>
 
 ```bash
-git clone https://github.com/FeloDeck/voicenux-plugin.git
+git clone https://github.com/voicenux/voicenux-plugin.git
 cd voicenux-plugin
 make install
 ```

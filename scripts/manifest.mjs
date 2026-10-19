@@ -60,7 +60,7 @@ const manifest = {
 	Version: version,
 	Author: "Felitendo",
 	Description: "Control the Voicenux voice changer from OpenDeck: voices with their pictures, the soundboard, mute, push to talk and push to change your voice.",
-	URL: "https://github.com/FeloDeck/voicenux-plugin",
+	URL: "https://github.com/voicenux/voicenux-plugin",
 	Icon: "images/plugin",
 	Category: "Voicenux",
 	CategoryIcon: "images/category",
