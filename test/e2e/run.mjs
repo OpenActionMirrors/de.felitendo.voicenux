@@ -144,6 +144,9 @@ await test("a toggle sound key stops its sound", async () => {
 });
 
 await test("stop sounds key stops everything and is white while sounds play", async () => {
+	// The sound of the test before may still be going out.
+	await waitFor("nothing plays", async () => (await vn()).playing.length === 0);
+	await sleep(400);
 	const idle = await keyImage(12);
 	await act("sound", "sad-violin");
 	await waitFor("key 12 turns white", async () => (await keyImage(12)) !== idle);
