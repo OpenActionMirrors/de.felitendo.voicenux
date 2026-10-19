@@ -9,6 +9,8 @@ use std::rc::{Rc, Weak};
 use std::time::Duration;
 
 use futures_util::{SinkExt, StreamExt};
+use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::{AbortHandle, spawn_local};
@@ -17,7 +19,7 @@ use tokio_tungstenite::tungstenite::protocol::CloseFrame;
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
 
 use crate::emitter::Emitter;
-use crate::js::{self, truthy};
+use crate::js;
 use crate::timers::{Timer, set_timeout};
 use crate::{Error, Res};
 
@@ -44,7 +46,8 @@ pub fn voicenux_running(proc: &Path) -> bool {
 /// The answer to an action, sent right away. Awaiting it waits for Voicenux.
 pub type Reply<T = Value> = Pin<Box<dyn Future<Output = Res<T>>>>;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(default)]
 pub struct Voice {
 	pub id: String,
 	pub name: String,
@@ -52,7 +55,8 @@ pub struct Voice {
 	pub favorite: bool,
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(default)]
 pub struct Sound {
 	pub id: String,
 	pub name: String,
@@ -60,7 +64,8 @@ pub struct Sound {
 }
 
 /// What Voicenux says right now: the voice in use, the switches and the soundboard volume.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(default)]
 pub struct State {
 	pub voice: Option<Voice>,
 	pub voice_changer: bool,
@@ -71,46 +76,16 @@ pub struct State {
 	pub hear_sounds: bool,
 }
 
-fn text(v: Option<&Value>) -> String {
-	js::str_or_empty(v)
-}
-
-impl Voice {
-	pub fn from_json(v: &Value) -> Voice {
-		Voice { id: text(v.get("id")), name: text(v.get("name")), icon: text(v.get("icon")), favorite: truthy(v.get("favorite")) }
-	}
-}
-
-impl Sound {
-	pub fn from_json(v: &Value) -> Sound {
-		Sound { id: text(v.get("id")), name: text(v.get("name")), icon: text(v.get("icon")) }
-	}
-}
-
 impl State {
-	pub fn from_json(v: &Value) -> State {
-		State {
-			voice: v.get("voice").filter(|v| v.is_object()).map(Voice::from_json),
-			voice_changer: truthy(v.get("voice_changer")),
-			hear_myself: truthy(v.get("hear_myself")),
-			background: truthy(v.get("background")),
-			mute: truthy(v.get("mute")),
-			sound_volume: v.get("sound_volume").filter(|v| !v.is_null()).map(|v| js::number(Some(v))),
-			hear_sounds: truthy(v.get("hear_sounds")),
-		}
-	}
-
 	/// The id of the voice in use.
 	pub fn voice_id(&self) -> Option<&str> {
 		self.voice.as_ref().map(|v| v.id.as_str())
 	}
 }
 
-fn list<T>(data: &Value, from: fn(&Value) -> T) -> Vec<T> {
-	match data {
-		Value::Array(items) => items.iter().map(from).collect(),
-		_ => Vec::new(),
-	}
+/// The items of a list from Voicenux. An item that is not what it should be is left out.
+fn list<T: DeserializeOwned>(data: &Value) -> Vec<T> {
+	data.as_array().into_iter().flatten().filter_map(|item| T::deserialize(item).ok()).collect()
 }
 
 // A picture: still on its way (with everyone who waits for it), or there.
@@ -392,26 +367,26 @@ impl VoicenuxClient {
 
 	fn on_message(&self, text: &str) {
 		let Ok(message) = serde_json::from_str::<Value>(text) else { return };
-		if truthy(message.get("event")) {
-			let event = js::to_string(message.get("event"));
-			let data = message.get("data").cloned().unwrap_or(Value::Null);
+		if let Some(event) = message["event"].as_str().filter(|e| !e.is_empty()) {
+			let data = &message["data"];
 			if event == "hello" {
 				if let Some(socket) = self.ws.borrow().as_ref() {
 					socket.greeted.set(true);
 				}
 				self.retry.set(0);
-				*self.version.borrow_mut() = data.get("version").cloned().unwrap_or(Value::Null);
-				self.api.set(data.get("api").filter(|a| !a.is_null()).map(|a| js::number(Some(a))));
+				*self.version.borrow_mut() = data["version"].clone();
+				self.api.set(data["api"].as_f64());
 			}
-			self.on_event(&event, &data);
-		} else if let Some(id) = message.get("id").and_then(Value::as_u64) {
+			self.on_event(event, data);
+		} else if let Some(id) = message["id"].as_u64() {
 			let Some(pending) = self.pending.borrow_mut().remove(&id) else { return };
-			let result = if truthy(message.get("ok")) {
-				Ok(message.get("result").cloned().unwrap_or(Value::Null))
-			} else if truthy(message.get("error")) {
-				Err(Error(js::to_string(message.get("error"))))
+			let result = if message["ok"] == true {
+				Ok(message["result"].clone())
 			} else {
-				Err(Error::from("Voicenux said no"))
+				match message["error"].as_str() {
+					Some(error) if !error.is_empty() => Err(Error(error.to_string())),
+					_ => Err(Error::from("Voicenux said no")),
+				}
 			};
 			let _ = pending.send(result);
 		}
@@ -425,9 +400,9 @@ impl VoicenuxClient {
 			"state" => {
 				{
 					let mut d = self.data.borrow_mut();
-					d.state = Some(State::from_json(data));
-					if let Some(Value::Array(_)) = data.get("playing") {
-						d.playing = list(&data["playing"], |p| js::to_string(Some(p)));
+					d.state = Some(State::deserialize(data).unwrap_or_default());
+					if data["playing"].is_array() {
+						d.playing = list(&data["playing"]);
 					}
 				}
 				if self.connected() {
@@ -444,19 +419,19 @@ impl VoicenuxClient {
 				self.on_change.emit(&Change::All);
 			}
 			"voices" => {
-				self.data.borrow_mut().voices = list(data, Voice::from_json);
+				self.data.borrow_mut().voices = list(data);
 				if self.connected() {
 					self.on_change.emit(&Change::Voices);
 				}
 			}
 			"sounds" => {
-				self.data.borrow_mut().sounds = list(data, Sound::from_json);
+				self.data.borrow_mut().sounds = list(data);
 				if self.connected() {
 					self.on_change.emit(&Change::Sounds);
 				}
 			}
 			"playing" => {
-				self.data.borrow_mut().playing = list(data, |p| js::to_string(Some(p)));
+				self.data.borrow_mut().playing = list(data);
 				if self.connected() {
 					self.on_change.emit(&Change::Playing);
 				}
@@ -641,7 +616,7 @@ impl VoicenuxClient {
 			}
 			"voice-changer" => state.voice_changer = flip(state.voice_changer),
 			"mute" => state.mute = flip(state.mute),
-			"sound-volume" => state.sound_volume = Some(js::number(arg.map(Value::from).as_ref())),
+			"sound-volume" => state.sound_volume = arg.and_then(|a| a.parse().ok()),
 			_ => {}
 		}
 		Box::pin(async { Ok(Value::Null) })
@@ -732,6 +707,17 @@ mod tests {
 		assert_eq!(client.playing(), ["airhorn"]);
 		assert_eq!(client.voice("deep").map(|v| v.name), Some("Deep".to_string()));
 		assert_eq!(*changes.borrow(), [Change::All, Change::Voices, Change::Playing]);
+	}
+
+	#[test]
+	fn lists_leave_out_items_that_are_not_what_they_should_be() {
+		let client = VoicenuxClient::with("127.0.0.1", PORT, Box::new(|| false));
+		client.on_event("state", &json!({ "voice": null, "sound_volume": 55, "mute": true, "playing": ["airhorn", 3] }));
+		let state = client.state().unwrap_or_default();
+		assert_eq!((state.voice, state.sound_volume, state.mute, state.hear_sounds), (None, Some(55.0), true, false));
+		assert_eq!(client.playing(), ["airhorn"]);
+		client.on_event("sounds", &json!([{ "id": "coin", "name": "Coin", "icon": "coin" }, "not a sound"]));
+		assert_eq!(client.sounds(), [Sound { id: "coin".into(), name: "Coin".into(), icon: "coin".into() }]);
 	}
 
 	#[test]
