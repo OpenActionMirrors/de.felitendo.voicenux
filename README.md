@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="160" src="de.felitendo.voicenux.sdPlugin/images/plugin.svg" alt="Voicenux">
+  <img width="160" src="https://raw.githubusercontent.com/voicenux/voicenux-plugin/main/de.felitendo.voicenux.sdPlugin/images/plugin.svg" alt="Voicenux">
 </p>
 
 <h1 align="center">Voicenux for OpenDeck</h1>
@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img width="720" src="res/opendeck.png" alt="OpenDeck with Voicenux keys: voices with their pictures and a blue frame on the voice in use, sounds, voice changer, mute, hear myself, background, random and next voice, stop sounds, soundboard volume and two dials, and the settings of a Voice key with pictures of the key">
+  <img width="720" src="https://raw.githubusercontent.com/voicenux/voicenux-plugin/main/res/opendeck.png" alt="OpenDeck with Voicenux keys: voices with their pictures and a blue frame on the voice in use, sounds, voice changer, mute, hear myself, background, random and next voice, stop sounds, soundboard volume and two dials, and the settings of a Voice key with pictures of the key">
 </p>
 
 ## Install
