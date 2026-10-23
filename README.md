@@ -4,7 +4,7 @@
 
 <h1 align="center">Voicenux for OpenDeck</h1>
 
-<h3 align="center">Control your voice changer from your Stream Deck. Made for Linux.</h3>
+<h3 align="center">Control your voice changer and soundboard from your Stream Deck. Made for Linux.</h3>
 
 <p align="center">
   Voices with their pictures, the soundboard, mute, push to talk and push to change your voice for <a href="https://github.com/voicenux/voicenux">Voicenux</a>, on <a href="https://github.com/nekename/OpenDeck">OpenDeck</a>.
