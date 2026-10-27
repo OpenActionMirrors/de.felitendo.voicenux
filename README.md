@@ -55,8 +55,9 @@ make install PLUGINS=~/.var/app/me.amankhanna.opendeck/config/opendeck/plugins
 ## How to use
 
 1. In Voicenux, open **Settings → Other apps** and turn on **Let other apps control Voicenux**.
-2. In OpenDeck, drag an action from **Voicenux** onto a key.
-3. In the settings of the key, pick a voice or a sound.
+2. Voicenux asks if the plugin may control it. Click **Allow**.
+3. In OpenDeck, drag an action from **Voicenux** onto a key.
+4. In the settings of the key, pick a voice or a sound.
 
 Voice keys show the picture of their voice, with a blue frame while it is in use. The frame turns gray while the voice changer is off. Sound keys get the frame while they play.
 

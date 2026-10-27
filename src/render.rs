@@ -220,6 +220,8 @@ pub fn picture_key(o: &PictureKey) -> String {
 pub fn status_label(status: Status) -> String {
 	t(match status {
 		Status::Disabled => "API off",
+		Status::Asking => "Allow?",
+		Status::Refused => "Not allowed",
 		Status::Error => "Voicenux error",
 		_ => "Voicenux off",
 	})
@@ -227,7 +229,7 @@ pub fn status_label(status: Status) -> String {
 
 /// Shown on every key while Voicenux cannot be reached.
 pub fn status_key(status: Status) -> String {
-	let warn = matches!(status, Status::Disabled | Status::Error);
+	let warn = matches!(status, Status::Disabled | Status::Asking | Status::Refused | Status::Error);
 	let color = if warn { colors::AMBER } else { colors::GRAY };
 	let mut content = glyph(if warn { "plug" } else { "power" }, &GlyphOpts { x: 44.0, y: 22.0, size: 56.0, color, ..Default::default() });
 	let label = status_label(status);

@@ -7,6 +7,8 @@ pub static DE: &[(&str, &str)] = &[
 	// ----- keys and dials -----
 	("Voicenux off", "Voicenux aus"),
 	("API off", "API aus"),
+	("Allow?", "Erlauben?"),
+	("Not allowed", "Nicht erlaubt"),
 	("Voicenux error", "Voicenux-Fehler"),
 	("On", "An"),
 	("Off", "Aus"),
@@ -48,6 +50,10 @@ pub static DE: &[(&str, &str)] = &[
 	("Connecting to Voicenux…", "Verbinde mit Voicenux …"),
 	("Voicenux does not let other apps in", "Voicenux lässt keine anderen Apps zu"),
 	("Turn it on in the settings of Voicenux.", "Schalte das in den Einstellungen von Voicenux an."),
+	("Voicenux asks if the plugin may control it", "Voicenux fragt, ob das Plugin es steuern darf"),
+	("Click Allow in Voicenux.", "Klicke in Voicenux auf Erlauben."),
+	("Voicenux did not let the plugin in", "Voicenux hat das Plugin nicht zugelassen"),
+	("It asks again when you turn Other apps off and on.", "Es fragt wieder, wenn du Andere Apps aus- und wieder anschaltest."),
 	("Start Voicenux, the keys connect by themselves.", "Starte Voicenux, die Tasten verbinden sich dann von selbst."),
 	("Install Voicenux first.", "Installiere zuerst Voicenux."),
 	(
@@ -56,6 +62,7 @@ pub static DE: &[(&str, &str)] = &[
 	),
 	("How to install", "So installierst du es"),
 	("How to connect Voicenux", "So verbindest du Voicenux"),
+	("How to let the plugin in", "So lässt du das Plugin zu"),
 	(
 		"Click **Open Voicenux settings** below. It starts Voicenux if it is not running.",
 		"Klicke unten auf **Voicenux-Einstellungen öffnen**. Das startet Voicenux, falls es nicht läuft.",
@@ -64,6 +71,11 @@ pub static DE: &[(&str, &str)] = &[
 		"Under **Other apps**, turn on **Let other apps control Voicenux**.",
 		"Schalte unter **Andere Apps** den Punkt **Andere Apps dürfen Voicenux steuern** an.",
 	),
+	(
+		"Under **Other apps**, turn **Let other apps control Voicenux** off and on again.",
+		"Schalte unter **Andere Apps** den Punkt **Andere Apps dürfen Voicenux steuern** aus und wieder an.",
+	),
+	("Click **Allow** when Voicenux asks.", "Klicke auf **Erlauben**, wenn Voicenux fragt."),
 	("The status at the top turns green as soon as the connection works.", "Der Status oben wird grün, sobald die Verbindung steht."),
 	("Open Voicenux settings", "Voicenux-Einstellungen öffnen"),
 	("Try again", "Nochmal versuchen"),

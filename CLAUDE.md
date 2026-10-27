@@ -42,7 +42,7 @@
   `127.0.0.1:41967` for all keys, in `src/voicenux.rs`. Voicenux sends the state, the voices,
   the sounds and what plays, and every change after that. Keys never poll. The API is off until the
   user turns on **Settings → Other apps → Let other apps control Voicenux**. A refused connection
-  while a `voicenux` process runs means just that (status `disabled`), and the keys say "API off".
+  while a `voicenux` process runs means just that (status `disabled`), and the keys say "API off". Voicenux asks you before it lets an app in: it holds the handshake meanwhile (status `asking`), and a 403 means you said no (status `refused`).
 - Pictures of voices and sounds are the Fluent Emoji of Voicenux. The plugin asks Voicenux for them
   (`icon`) and keeps them while it is connected. Never put them in this repo. The settings pages
   load them straight from `http://127.0.0.1:41967/api/icon/NAME`.

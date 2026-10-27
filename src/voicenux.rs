@@ -14,9 +14,9 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::{AbortHandle, spawn_local};
-use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::tungstenite::protocol::CloseFrame;
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
+use tokio_tungstenite::tungstenite::{self, Message};
 
 use crate::emitter::Emitter;
 use crate::js;
@@ -31,6 +31,10 @@ const RETRY_DELAYS: [f64; 4] = [1000.0, 2000.0, 3000.0, 5000.0];
 const CALL_TIMEOUT: f64 = 5000.0;
 // The hello comes right away. Without it, something else listens on the port.
 const HELLO_TIMEOUT: f64 = 3000.0;
+// Voicenux answers the handshake at once, unless it asks you first whether the plugin may in.
+const ASK_AFTER: f64 = 1000.0;
+// Voicenux waits two minutes for your answer, then turns the plugin away.
+const HANDSHAKE_TIMEOUT: f64 = 130_000.0;
 
 /// Is Voicenux running at all? Then a refused connection means the API is off in its settings.
 /// Also finds the Flatpak, its processes show up here too.
@@ -136,6 +140,10 @@ pub enum Status {
 	Offline,
 	/// Voicenux runs, but "Let other apps control Voicenux" is off.
 	Disabled,
+	/// Voicenux asks you whether the plugin may control it.
+	Asking,
+	/// Voicenux did not let the plugin in: you said no, or did not answer in time.
+	Refused,
 	/// Anything else, see last_error.
 	Error,
 }
@@ -149,13 +157,15 @@ impl Status {
 			Status::Connected => "connected",
 			Status::Offline => "offline",
 			Status::Disabled => "disabled",
+			Status::Asking => "asking",
+			Status::Refused => "refused",
 			Status::Error => "error",
 		}
 	}
 
 	/// Voicenux cannot be reached, and it is not just starting.
 	pub fn is_failure(self) -> bool {
-		matches!(self, Status::Offline | Status::Disabled | Status::Error)
+		matches!(self, Status::Offline | Status::Disabled | Status::Asking | Status::Refused | Status::Error)
 	}
 }
 
@@ -352,17 +362,38 @@ impl VoicenuxClient {
 		let greeted = Rc::new(Cell::new(false));
 		let url = format!("ws://{}:{}", self.host, self.port);
 		let task = spawn_local(run_socket(me, serial, url, rx, open.clone()));
-		*self.ws.borrow_mut() = Some(Socket { serial, tx, open, greeted: greeted.clone(), task: task.abort_handle() });
+		*self.ws.borrow_mut() = Some(Socket { serial, tx, open: open.clone(), greeted, task: task.abort_handle() });
+		let me = self.me.clone();
+		set_timeout(ASK_AFTER, move || {
+			let Some(me) = me.upgrade() else { return };
+			if !me.is_current(serial) || open.get() {
+				return;
+			}
+			if (me.running)() {
+				me.set_status(Status::Asking, "");
+			} else {
+				me.no_hello();
+			}
+		});
+	}
+
+	/// The handshake is done: Voicenux says hello right away.
+	fn wait_for_hello(&self, serial: u64) {
+		let Some(greeted) = self.ws.borrow().as_ref().map(|s| s.greeted.clone()) else { return };
 		let me = self.me.clone();
 		set_timeout(HELLO_TIMEOUT, move || {
 			let Some(me) = me.upgrade() else { return };
 			if me.is_current(serial) && !greeted.get() {
-				me.drop_socket();
-				me.cleanup("no hello");
-				me.set_status(Status::Error, &format!("Something else uses port {}", me.port));
-				me.schedule_retry();
+				me.no_hello();
 			}
 		});
+	}
+
+	fn no_hello(&self) {
+		self.drop_socket();
+		self.cleanup("no hello");
+		self.set_status(Status::Error, &format!("Something else uses port {}", self.port));
+		self.schedule_retry();
 	}
 
 	fn on_message(&self, text: &str) {
@@ -459,6 +490,17 @@ impl VoicenuxClient {
 		if was_connected {
 			self.on_change.emit(&Change::All);
 		}
+		self.schedule_retry();
+	}
+
+	/// Voicenux said no (403). It asks again once you turn Other apps off and on, or restart it.
+	fn refused(&self, serial: u64) {
+		if !self.is_current(serial) {
+			return;
+		}
+		*self.ws.borrow_mut() = None;
+		self.cleanup("not allowed");
+		self.set_status(Status::Refused, "");
 		self.schedule_retry();
 	}
 
@@ -652,9 +694,14 @@ impl VoicenuxClient {
 }
 
 async fn run_socket(me: Rc<VoicenuxClient>, serial: u64, url: String, mut rx: mpsc::UnboundedReceiver<Message>, open: Rc<Cell<bool>>) {
-	let stream = match tokio_tungstenite::connect_async(url).await {
-		Ok((stream, _)) => stream,
-		Err(_) => {
+	let handshake = tokio::time::timeout(Duration::from_secs_f64(HANDSHAKE_TIMEOUT / 1000.0), tokio_tungstenite::connect_async(url));
+	let stream = match handshake.await {
+		Ok(Ok((stream, _))) => stream,
+		Ok(Err(tungstenite::Error::Http(response))) if response.status() == 403 => {
+			me.refused(serial);
+			return;
+		}
+		_ => {
 			me.closed(serial);
 			return;
 		}
@@ -663,6 +710,7 @@ async fn run_socket(me: Rc<VoicenuxClient>, serial: u64, url: String, mut rx: mp
 		return;
 	}
 	open.set(true);
+	me.wait_for_hello(serial);
 	let (mut sink, mut stream) = stream.split();
 	let writer = spawn_local(async move {
 		while let Some(message) = rx.recv().await {
@@ -731,5 +779,26 @@ mod tests {
 		std::fs::write(proc.join("34").join("comm"), "voicenux\n").unwrap();
 		assert!(voicenux_running(&proc));
 		let _ = std::fs::remove_dir_all(&proc);
+	}
+
+	#[test]
+	fn waits_while_voicenux_asks() {
+		use tokio::io::AsyncWriteExt;
+		let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+		tokio::task::LocalSet::new().block_on(&rt, async {
+			let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+			let port = listener.local_addr().unwrap().port();
+			let client = VoicenuxClient::with("127.0.0.1", port, Box::new(|| true));
+			client.start();
+			// Voicenux holds the handshake while it asks you.
+			let (mut socket, _) = listener.accept().await.unwrap();
+			tokio::time::sleep(Duration::from_secs_f64((HELLO_TIMEOUT + 500.0) / 1000.0)).await;
+			assert_eq!(client.status(), Status::Asking);
+			// You said no.
+			socket.write_all(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n").await.unwrap();
+			tokio::time::sleep(Duration::from_millis(200)).await;
+			assert_eq!(client.status(), Status::Refused);
+			client.stop();
+		});
 	}
 }

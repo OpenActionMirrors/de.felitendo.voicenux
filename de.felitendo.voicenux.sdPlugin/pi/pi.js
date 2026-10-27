@@ -340,6 +340,10 @@ function statusText() {
 			return { kind: "ok", quiet: true, title: t("Connected to Voicenux {version}", { version: c.version ?? "" }).trim(), hint: c.error ? translateMessage(c.error) : "" };
 		case "disabled":
 			return { kind: "warn", title: t("Voicenux does not let other apps in"), hint: t("Turn it on in the settings of Voicenux.") };
+		case "asking":
+			return { kind: "warn busy", title: t("Voicenux asks if the plugin may control it"), hint: t("Click Allow in Voicenux.") };
+		case "refused":
+			return { kind: "warn", title: t("Voicenux did not let the plugin in"), hint: t("It asks again when you turn Other apps off and on.") };
 		case "offline":
 			return { kind: "bad", title: t("Voicenux is not running"), hint: c.installed ? t("Start Voicenux, the keys connect by themselves.") : t("Install Voicenux first.") };
 		case "error":
@@ -350,7 +354,7 @@ function statusText() {
 }
 
 function problem() {
-	return ["disabled", "offline", "error"].includes(conn?.connection?.status);
+	return ["disabled", "refused", "offline", "error"].includes(conn?.connection?.status);
 }
 
 function renderStatusCard() {
@@ -378,15 +382,22 @@ function renderGuide() {
 			h("div", { class: "buttons" }, h("button", { class: "btn primary", onclick: () => send({ type: "openUrl", url: "https://github.com/voicenux/voicenux#install" }) }, t("How to install"))),
 		);
 	}
+	// You said no when Voicenux asked: it asks again after Other apps was off.
+	const refused = c.status === "refused";
 	return h(
 		"section",
 		{ class: "connection" },
-		h("div", { class: "box-title" }, t("How to connect Voicenux")),
+		h("div", { class: "box-title" }, t(refused ? "How to let the plugin in" : "How to connect Voicenux")),
 		h(
 			"ol",
 			{ class: "steps" },
 			h("li", {}, rich(t("Click **Open Voicenux settings** below. It starts Voicenux if it is not running."))),
-			h("li", {}, rich(t("Under **Other apps**, turn on **Let other apps control Voicenux**."))),
+			refused
+				? [
+						h("li", {}, rich(t("Under **Other apps**, turn **Let other apps control Voicenux** off and on again."))),
+						h("li", {}, rich(t("Click **Allow** when Voicenux asks."))),
+					]
+				: h("li", {}, rich(t("Under **Other apps**, turn on **Let other apps control Voicenux**."))),
 		),
 		h("p", { class: "note" }, t("The status at the top turns green as soon as the connection works.")),
 		h("div", { class: "buttons" }, h("button", { class: "btn primary", onclick: openVoicenux }, t("Open Voicenux settings")), h("button", { class: "btn", onclick: () => send({ type: "retry" }) }, t("Try again"))),
