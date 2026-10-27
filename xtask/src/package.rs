@@ -34,6 +34,8 @@ fn install_binary(built: &Path, target: &str) -> Result {
 	if let Some(dir) = to.parent() {
 		fs::create_dir_all(dir).map_err(|e| e.to_string())?;
 	}
+	// A plugin that runs keeps its old file. Writing into it fails with "text file busy".
+	let _ = fs::remove_file(&to);
 	fs::copy(built, &to).map_err(|e| format!("{}: {e}", built.display()))?;
 	println!("{}", to.strip_prefix(root()).unwrap_or(&to).display());
 	Ok(())
