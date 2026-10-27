@@ -2,6 +2,17 @@
 
 What each release brings, newest first.
 
+## v0.3.0
+
+_27 October 2026_
+
+Welcome to Voicenux for OpenDeck `v0.3.0`! The plugin is ready for the next Voicenux, which asks before an app may control it.
+
+### Highlights
+
+- While Voicenux asks, the keys show **Allow?** and wait for your answer
+- If you said no, the keys show **Not allowed**, and the settings of a key show how to let the plugin in
+
 ## v0.2.1
 
 _19 October 2026_
