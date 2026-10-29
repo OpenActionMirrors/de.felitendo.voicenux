@@ -454,6 +454,8 @@ impl Behavior for StopSounds {
 
 	fn render(&self, k: &KeyRc) {
 		k.set_state(u16::from(!k.client.playing().is_empty()));
+		// The images of the manifest, not one from before.
+		k.glyph_for_title("", "below");
 	}
 
 	async fn on_press(&self, k: &KeyRc, _press: Press) -> Res<()> {

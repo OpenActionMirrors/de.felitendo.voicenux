@@ -69,7 +69,9 @@ struct Screen {
 	state: Option<u16>,
 	/// The touch strip content as JSON text. None sends it again.
 	feedback: Option<String>,
-	/// The key shows an image of its own, not the one from the manifest.
+	/// The key shows an image of its own, not the one from the manifest. OpenDeck keeps such an
+	/// image in the profile, also across restarts, so a new key starts out assuming one: like
+	/// "Voicenux off" from before, which would stay on keys that show their manifest image.
 	image_overridden: bool,
 	/// The status image, while Voicenux cannot be reached.
 	status_shown: Option<Status>,
@@ -124,6 +126,7 @@ impl Key {
 				is_in_multi_action: a.is_in_multi_action,
 				state: a.state.unwrap_or(0),
 				settings: with_defaults(kind, a.settings.as_ref()),
+				screen: Screen { image_overridden: true, ..Screen::default() },
 				..Base::default()
 			}),
 			own: RefCell::new((kind.new_state)()),

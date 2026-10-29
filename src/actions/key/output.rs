@@ -265,3 +265,30 @@ impl Key {
 		self.sd.set_feedback(&self.context, payload);
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use serde_json::json;
+
+	use super::super::testing::*;
+
+	#[tokio::test]
+	async fn a_new_key_clears_an_image_opendeck_kept_from_before() {
+		local(async {
+			// Keys with the images of their manifest: "Voicenux off" from an earlier run must go.
+			for kind in [&crate::actions::switches::VOICE_CHANGER, &crate::actions::sounds::STOP_SOUNDS] {
+				let (_p, k) = key(kind, json!({}));
+				k.draw();
+				let cleared = || {
+					let sent = k.sd.sent.as_ref().unwrap().borrow();
+					sent.iter().filter(|m| m["event"] == "setImage" && m["payload"]["image"] == "").count()
+				};
+				assert_eq!(cleared(), 1, "{}", kind.name);
+				// Once is enough.
+				k.draw();
+				assert_eq!(cleared(), 1, "{}", kind.name);
+			}
+		})
+		.await;
+	}
+}
