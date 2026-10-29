@@ -169,6 +169,7 @@ pub fn all() -> Vec<&'static Kind> {
 		&sounds::SOUND_VOLUME,
 		&switches::HEAR_SOUNDS,
 		&voices::VOICE_DIAL,
+		&sounds::SOUND_DIAL,
 		&sounds::SOUND_VOLUME_DIAL,
 	]
 }

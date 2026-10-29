@@ -57,6 +57,10 @@
 		"Name": "Stimme (Drehregler)",
 		"Tooltip": "Drehen wählt eine Stimme (mit Bild), Drücken nimmt sie."
 	},
+	"de.felitendo.voicenux.sounddial": {
+		"Name": "Sound (Drehregler)",
+		"Tooltip": "Drehen wählt einen Sound (mit Bild), Drücken spielt ihn ab."
+	},
 	"de.felitendo.voicenux.soundvolumedial": {
 		"Name": "Soundboard-Lautstärke (Drehregler)",
 		"Tooltip": "Drehen ändert die Lautstärke des Soundboards, Drücken stoppt alle Sounds."

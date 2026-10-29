@@ -1,4 +1,5 @@
-// Sounds: one sound of the soundboard, a random one, stop all, and the soundboard volume.
+// Sounds: one sound of the soundboard, a random one, stop all, the soundboard volume, and dials to
+// pick a sound and for the volume.
 use std::hash::{BuildHasher, Hasher};
 
 use async_trait::async_trait;
@@ -10,7 +11,7 @@ use super::{Behavior, Gesture, KeyRc, Kind, Press, defaults};
 use crate::i18n::t;
 use crate::icons::{colors, volume_glyph};
 use crate::js::{self, fmt};
-use crate::render::{Frame, GlyphKey, PictureKey, dial_icon, glyph_key, picture_key};
+use crate::render::{Frame, GlyphKey, PictureKey, dial_icon, dial_picture, glyph_key, picture_key};
 use crate::settings::or;
 use crate::timers::Timer;
 use crate::voicenux::{Change, Sound as SoundInfo};
@@ -617,6 +618,107 @@ pub static SOUND_VOLUME_DIAL: Kind = Kind {
 	..Kind::BASE
 };
 
+// ----- Stream Deck + dial: turn to pick a sound (with its picture), press or touch to play it. -----
+// play: "restart" (from the start) or "toggle" (play and stop). It stays on the sound you picked.
+
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct SoundDialSettings {
+	play: String,
+}
+
+#[derive(Default)]
+struct SoundPick {
+	selected: Option<String>,
+}
+
+struct SoundDial;
+
+impl SoundDial {
+	/// The sound picked, or the first one.
+	fn target(&self, k: &KeyRc) -> Option<SoundInfo> {
+		let selected = k.own::<SoundPick>().selected.clone();
+		selected.and_then(|id| k.client.sound(&id)).or_else(|| k.client.sounds().into_iter().next())
+	}
+}
+
+#[async_trait(?Send)]
+impl Behavior for SoundDial {
+	fn layout(&self) -> Option<&'static str> {
+		Some("layouts/voice-dial.json")
+	}
+
+	fn on_change(&self, k: &KeyRc, change: Change) {
+		if change == Change::Sounds {
+			let selected = k.own::<SoundPick>().selected.clone();
+			if selected.is_some_and(|id| k.client.sound(&id).is_none()) {
+				k.own::<SoundPick>().selected = None;
+			}
+		}
+		self.render(k);
+	}
+
+	fn render_offline(&self, k: &KeyRc) {
+		k.set_feedback(json!({ "title": t("Sound"), "name": "", "info": k.dial_status(), "picture": dial_picture(None, "sound") }));
+	}
+
+	fn render(&self, k: &KeyRc) {
+		let Some(sound) = self.target(k) else {
+			return k.set_feedback(json!({
+				"title": t("Sound"),
+				"name": "",
+				"info": { "value": t("The soundboard has no sounds"), "color": colors::MUTED },
+				"picture": dial_picture(None, "sound"),
+			}));
+		};
+		let sounds = k.client.sounds();
+		let playing = k.client.playing().contains(&sound.id);
+		let info = match sounds.iter().position(|s| s.id == sound.id) {
+			_ if playing => t("Playing"),
+			Some(index) => format!("{} / {}", index + 1, sounds.len()),
+			None => String::new(),
+		};
+		let png = k.picture(&sound.icon);
+		k.set_feedback(json!({
+			"title": t("Sound"),
+			"name": { "value": sound.name, "color": colors::WHITE },
+			"info": { "value": info, "color": if playing { colors::CYAN } else { colors::MUTED } },
+			"picture": dial_picture(png.as_deref(), "sound"),
+		}));
+	}
+
+	async fn on_dial_rotate(&self, k: &KeyRc, ticks: f64) -> Res<()> {
+		let sounds = k.client.sounds();
+		if sounds.is_empty() {
+			return Ok(());
+		}
+		let target = self.target(k).map(|s| s.id);
+		let from = sounds.iter().position(|s| Some(&s.id) == target.as_ref()).unwrap_or(0) as i64;
+		let len = sounds.len() as i64;
+		let next = sounds[((from + ticks as i64) % len + len) as usize % sounds.len()].id.clone();
+		k.own::<SoundPick>().selected = Some(next);
+		self.render(k);
+		Ok(())
+	}
+
+	async fn on_dial_down(&self, k: &KeyRc) -> Res<()> {
+		let sound = self.target(k).ok_or("The soundboard has no sounds")?;
+		let mode = if k.settings::<SoundDialSettings>().play == "toggle" { "toggle" } else { "restart" };
+		play_as(k, mode, &sound.id).await?;
+		self.render(k);
+		Ok(())
+	}
+}
+
+pub static SOUND_DIAL: Kind = Kind {
+	uuid: "de.felitendo.voicenux.sounddial",
+	name: "SoundDial",
+	defaults: || defaults(json!({ "play": "restart", "disableTouch": false })),
+	behavior: &SoundDial,
+	new_state: || Box::new(SoundPick::default()),
+	..Kind::BASE
+};
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -630,6 +732,7 @@ mod tests {
 		assert_defaults::<SaySoundSettings>(&[&SAY_SOUND]);
 		assert_defaults::<SoundVolumeSettings>(&[&SOUND_VOLUME]);
 		assert_defaults::<SoundVolumeDialSettings>(&[&SOUND_VOLUME_DIAL]);
+		assert_defaults::<SoundDialSettings>(&[&SOUND_DIAL]);
 	}
 
 	fn args(op: &str) -> Press {
@@ -761,6 +864,28 @@ mod tests {
 			assert_eq!(last(&old), ["sound", "airhorn"]);
 			hold(&old, 1000.0).await;
 			assert_eq!(old.last_error().as_deref(), Some("Saying a sound needs a newer Voicenux"));
+		})
+		.await;
+	}
+
+	#[tokio::test]
+	async fn a_sound_dial_picks_a_sound_and_a_press_plays_it() {
+		local(async {
+			let (_p, k) = key(&SOUND_DIAL, json!({ "play": "toggle" }));
+			k.client.set_sounds(vec![sound("airhorn", "Air Horn", "postal-horn"), sound("bruh", "Bruh", "face")]);
+			assert_eq!(SoundDial.target(&k).map(|s| s.id), Some("airhorn".into()));
+			SoundDial.on_dial_rotate(&k, 1.0).await.unwrap();
+			assert_eq!(SoundDial.target(&k).map(|s| s.id), Some("bruh".into()));
+			// Past the last one it starts over, both ways.
+			SoundDial.on_dial_rotate(&k, 1.0).await.unwrap();
+			assert_eq!(SoundDial.target(&k).map(|s| s.id), Some("airhorn".into()));
+			SoundDial.on_dial_rotate(&k, -1.0).await.unwrap();
+			SoundDial.on_dial_down(&k).await.unwrap();
+			assert_eq!(last(&k), ["sound-toggle", "bruh"]);
+			// A sound gone from the soundboard: back to the first one.
+			k.client.set_sounds(vec![sound("airhorn", "Air Horn", "postal-horn")]);
+			SoundDial.on_change(&k, Change::Sounds);
+			assert_eq!(SoundDial.target(&k).map(|s| s.id), Some("airhorn".into()));
 		})
 		.await;
 	}

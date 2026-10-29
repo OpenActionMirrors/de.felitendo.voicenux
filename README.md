@@ -68,7 +68,7 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 ## Actions
 
 <details>
-<summary>All 15 actions</summary>
+<summary>All 16 actions</summary>
 
 | Action | What it does |
 |---|---|
@@ -86,6 +86,7 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 | Soundboard Volume | Make the sounds louder, quieter or set their volume. Hold to keep going. |
 | Hear Sounds | Hear the sounds yourself too. |
 | Voice (Dial) | Turn to pick a voice (with its picture), press to use it. Only favorites if you like. |
+| Sound (Dial) | Turn to pick a sound (with its picture), press to play it. |
 | Soundboard Volume (Dial) | Turn for the soundboard volume, press to stop all sounds. |
 
 Most keys can do one thing on press, another on hold and another on double press. Keys that turn something on or off can also only turn it on, or only off (that helps in multi actions), or keep it on only while you hold the key.

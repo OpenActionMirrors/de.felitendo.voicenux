@@ -28,7 +28,7 @@ pub fn run() -> Result {
 	write(&images.join("plugin.svg"), icon)?;
 	write(&images.join("category.svg"), action_icon_svg("plugin", "0 0 24 24"))?;
 	// Dials: icon in the touch strip, and the image in the dial slot of OpenDeck.
-	for name in ["voice", "volume"] {
+	for name in ["voice", "sound", "volume"] {
 		write(&images.join("encoder").join(format!("{name}.svg")), action_icon_svg(name, "-4 -4 32 32"))?;
 		write(&images.join("encoder").join(format!("{name}-key.svg")), action_icon_svg(name, "-8 -8 40 40"))?;
 	}

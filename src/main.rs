@@ -122,6 +122,7 @@ actions! {
 	SoundVolume => "de.felitendo.voicenux.soundvolume",
 	HearSounds => "de.felitendo.voicenux.hearsounds",
 	VoiceDial => "de.felitendo.voicenux.voicedial",
+	SoundDial => "de.felitendo.voicenux.sounddial",
 	SoundVolumeDial => "de.felitendo.voicenux.soundvolumedial",
 }
 

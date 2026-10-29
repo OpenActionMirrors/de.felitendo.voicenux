@@ -301,6 +301,23 @@ export const SCHEMAS = {
 			TOUCH,
 		],
 	},
+	[`${ID}.sounddial`]: {
+		...DIAL,
+		help: "Turn to pick a sound of the soundboard, press or touch to play it.",
+		fields: [
+			{
+				key: "play",
+				label: "Press does",
+				type: "select",
+				options: [
+					["restart", "Play from the start"],
+					["toggle", "Play and stop"],
+				],
+				section: CONTROLS,
+			},
+			TOUCH,
+		],
+	},
 	[`${ID}.soundvolumedial`]: {
 		...DIAL,
 		help: "Turn for the volume of the soundboard.",

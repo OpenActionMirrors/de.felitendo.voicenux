@@ -287,7 +287,7 @@ impl Behavior for VoiceDial {
 	}
 
 	fn render_offline(&self, k: &KeyRc) {
-		k.set_feedback(json!({ "title": t("Voice"), "name": "", "info": k.dial_status(), "picture": dial_picture(None) }));
+		k.set_feedback(json!({ "title": t("Voice"), "name": "", "info": k.dial_status(), "picture": dial_picture(None, "voice") }));
 	}
 
 	fn render(&self, k: &KeyRc) {
@@ -309,7 +309,7 @@ impl Behavior for VoiceDial {
 			"title": t(if picked && !in_use { "Press to use" } else { "Voice" }),
 			"name": { "value": voice.name, "color": if in_use && !on { colors::MUTED } else { colors::WHITE } },
 			"info": { "value": info, "color": if in_use && on { colors::CYAN } else { colors::MUTED } },
-			"picture": dial_picture(png.as_deref()),
+			"picture": dial_picture(png.as_deref(), "voice"),
 		}));
 	}
 

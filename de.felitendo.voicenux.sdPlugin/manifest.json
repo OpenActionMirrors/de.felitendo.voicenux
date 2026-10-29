@@ -312,6 +312,31 @@
 			}
 		},
 		{
+			"UUID": "de.felitendo.voicenux.sounddial",
+			"Name": "Sound (Dial)",
+			"Icon": "images/actions/sound",
+			"Tooltip": "Turn the dial to pick a sound (with its picture), press to play it.",
+			"Controllers": [
+				"Encoder"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/encoder/sound-key"
+				}
+			],
+			"Encoder": {
+				"layout": "layouts/voice-dial.json",
+				"Icon": "images/encoder/sound",
+				"TriggerDescription": {
+					"Rotate": "Pick a sound",
+					"Push": "Play it",
+					"Touch": "Play it"
+				}
+			}
+		},
+		{
 			"UUID": "de.felitendo.voicenux.soundvolumedial",
 			"Name": "Soundboard Volume (Dial)",
 			"Icon": "images/actions/volume",

@@ -265,10 +265,11 @@ pub fn dial_icon(name: &str, setup: bool, color: Option<&str>) -> String {
 
 /// The picture of a voice for the touch strip of a dial. OpenDeck draws no pictures inside an SVG
 /// there, so it gets the PNG itself.
-pub fn dial_picture(png: Option<&str>) -> String {
+/// Without one, the glyph `fallback` stands in, in gray.
+pub fn dial_picture(png: Option<&str>, fallback: &str) -> String {
 	match png.filter(|p| !p.is_empty()) {
 		Some(png) => format!("data:image/png;base64,{png}"),
-		None => dial_icon("voice", false, Some(colors::GRAY)),
+		None => dial_icon(fallback, false, Some(colors::GRAY)),
 	}
 }
 

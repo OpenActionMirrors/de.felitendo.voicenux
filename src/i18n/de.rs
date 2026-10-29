@@ -171,6 +171,11 @@ pub static DE: &[(&str, &str)] = &[
 	("Nothing heard. Hold the key and say a sound.", "Nichts gehört. Halte die Taste und sag einen Sound."),
 	("Still looking for the last sound", "Sucht noch den letzten Sound"),
 	("Saying a sound needs a newer Voicenux", "Sound ansagen braucht ein neueres Voicenux"),
+	("Playing", "Läuft"),
+	(
+		"Turn to pick a sound of the soundboard, press or touch to play it.",
+		"Drehen wählt einen Sound vom Soundboard, Drücken oder Tippen spielt ihn ab.",
+	),
 	("Voicenux found no sound", "Voicenux hat keinen Sound gefunden"),
 	("This sound is gone. Hold the key to find a new one.", "Dieser Sound ist weg. Halte die Taste, um einen neuen zu finden."),
 	("nothing found for \"{words}\"", "nichts gefunden für „{words}“"),

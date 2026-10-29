@@ -185,6 +185,15 @@ pub static ACTIONS: &[ActionDef] = &[
 		["Stimme (Drehregler)", "Drehen wählt eine Stimme (mit Bild), Drücken nimmt sie."],
 	),
 	dial(
+		"sounddial",
+		"Sound (Dial)",
+		"sound",
+		"Turn the dial to pick a sound (with its picture), press to play it.",
+		"layouts/voice-dial.json",
+		["Pick a sound", "Play it", "Play it"],
+		["Sound (Drehregler)", "Drehen wählt einen Sound (mit Bild), Drücken spielt ihn ab."],
+	),
+	dial(
 		"soundvolumedial",
 		"Soundboard Volume (Dial)",
 		"volume",
