@@ -218,8 +218,8 @@ pub static DE: &[(&str, &str)] = &[
 	("English", "Englisch"),
 	("German", "Deutsch"),
 	(
-		"While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (290 MB).",
-		"Solange du die Taste hältst, hören dich andere nicht. Beim ersten Mal lädt Voicenux seine Spracherkennung (290 MB).",
+		"While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (970 MB).",
+		"Solange du die Taste hältst, hören dich andere nicht. Beim ersten Mal lädt Voicenux seine Spracherkennung (970 MB).",
 	),
 	("While the sound plays", "Solange der Sound läuft"),
 	(

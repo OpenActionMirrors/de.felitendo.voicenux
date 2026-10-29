@@ -19,7 +19,7 @@ use crate::{Error, Res};
 
 /// Shorter is a press. Voicenux listens from the start anyway, so no word is lost meanwhile.
 const SAY_AFTER_MS: f64 = 400.0;
-/// The first time, Voicenux downloads its speech recognition (about 290 MB).
+/// The first time, Voicenux downloads its speech recognition (about 970 MB).
 const TRANSCRIBE_MS: f64 = 600_000.0;
 const FIND_MS: f64 = 120_000.0;
 /// How often the key draws the lens again while it looks.
@@ -156,8 +156,20 @@ impl Say {
 	async fn find(&self, k: &KeyRc) -> Res<()> {
 		let s: Listening = k.settings();
 		let language = Some(s.language.as_str()).filter(|l| !l.is_empty() && *l != "auto");
-		let heard = k.client.call_waiting("transcribe", language, TRANSCRIBE_MS).await?;
+		// For a voice, Voicenux listens for the names of your voices instead of sounds.
+		let voices = json!({ "language": language.unwrap_or("auto"), "expect": "voices" }).to_string();
+		let arg = if self.0 == What::Voice { Some(voices.as_str()) } else { language };
+		let heard = k.client.call_waiting("transcribe", arg, TRANSCRIBE_MS).await?;
 		let said = heard["text"].as_str().unwrap_or_default().trim().to_string();
+		// What Voicenux heard in the other language: a German "vine boom" is "Weinbumm".
+		let also: Vec<&str> = heard["alternatives"]
+			.as_array()
+			.into_iter()
+			.flatten()
+			.filter_map(Value::as_str)
+			.map(str::trim)
+			.filter(|a| !a.is_empty())
+			.collect();
 		if said.is_empty() {
 			return Err(Error::from(match self.0 {
 				What::Sound => "Nothing heard. Hold the key and say a sound.",
@@ -167,15 +179,24 @@ impl Say {
 		self.show(k, Phase::Searching, &said);
 		match self.0 {
 			What::Sound => {
-				let found = k.client.call_waiting("find-sound", Some(&said), FIND_MS).await?;
+				let arg = if also.is_empty() { said.clone() } else { json!({ "words": said, "alternatives": also }).to_string() };
+				let found = k.client.call_waiting("find-sound", Some(&arg), FIND_MS).await?;
 				keep_sound(k, &found, &said)
 			}
 			What::Voice => {
-				let found =
-					k.call("find-voice", Some(&said)).await.map_err(|error| match error.message().strip_prefix("no voice called ") {
-						Some(name) => Error(format!("No voice called {name} in Voicenux. Voices are not searched online.")),
-						None => error,
-					})?;
+				let mut found = k.call("find-voice", Some(&said)).await;
+				for other in also {
+					if found.is_ok() {
+						break;
+					}
+					if let Ok(voice) = k.call("find-voice", Some(other)).await {
+						found = Ok(voice);
+					}
+				}
+				let found = found.map_err(|error| match error.message().strip_prefix("no voice called ") {
+					Some(name) => Error(format!("No voice called {name} in Voicenux. Voices are not searched online.")),
+					None => error,
+				})?;
 				let id = found["id"].as_str().filter(|id| !id.is_empty()).ok_or("Voicenux found no voice")?;
 				k.call("voice", Some(id)).await?;
 				k.save_settings(&[("voice", id.into())]);
@@ -204,14 +225,15 @@ impl Say {
 	}
 }
 
-/// The key keeps the sound Voicenux found, with what you said and where it ranks.
+/// The key keeps the sound Voicenux found, with the words that found it and where it ranks.
 fn keep_sound(k: &KeyRc, found: &Value, said: &str) -> Res<()> {
 	let id = found["id"].as_str().filter(|id| !id.is_empty()).ok_or("Voicenux found no sound")?;
+	let words = found["words"].as_str().filter(|w| !w.is_empty()).unwrap_or(said);
 	k.save_settings(&[
 		("sound", id.into()),
 		("soundName", found["name"].clone()),
 		("soundIcon", found["icon"].clone()),
-		("soundWords", said.into()),
+		("soundWords", words.into()),
 		("soundRank", found["rank"].as_u64().unwrap_or(1).into()),
 	]);
 	Ok(())
@@ -491,6 +513,23 @@ mod tests {
 	}
 
 	#[tokio::test(start_paused = true)]
+	async fn a_say_key_tries_what_voicenux_heard_in_english_too() {
+		local(async {
+			let (_p, k) = key(&SAY_SOUND, json!({}));
+			if let Some(fake) = k.client.fake.borrow_mut().as_mut() {
+				fake.said = "Weinbumm".into();
+				fake.also = vec!["Vine boom".into()];
+				fake.unknown = vec!["Weinbumm".into()];
+			}
+			hold(&k, 1000.0).await;
+			assert_eq!(last(&k), ["find-sound", r#"{"words":"Weinbumm","alternatives":["Vine boom"]}"#]);
+			let s: SaySoundSettings = k.settings();
+			assert_eq!((s.sound.as_str(), s.sound_words.as_str()), ("found-1", "Vine boom"), "the next one goes by the English");
+		})
+		.await;
+	}
+
+	#[tokio::test(start_paused = true)]
 	async fn a_double_press_takes_the_sound_with_the_next_most_likes() {
 		local(async {
 			let (_p, k) = key(&SAY_SOUND, json!({ "sound": "found-1", "soundWords": "vine boom", "soundRank": 1 }));
@@ -539,6 +578,8 @@ mod tests {
 			said(&k, "Deep.");
 			hold(&k, 1000.0).await;
 			assert_eq!(last(&k), ["voice", "deep"]);
+			let heard = calls(&k).into_iter().find(|c| c.0 == "transcribe").and_then(|c| c.1);
+			assert_eq!(heard.as_deref(), Some(r#"{"language":"auto","expect":"voices"}"#), "it listens for voices");
 			assert_eq!(k.settings::<SayVoiceSettings>().voice, "deep");
 			assert_eq!(k.vn().voice_id(), Some("deep"));
 			// In use: a press turns the voice changer off, the next one uses the voice again.

@@ -132,6 +132,10 @@ pub struct Fake {
 	pub old: bool,
 	/// What transcribe says you said.
 	pub said: String,
+	/// What it heard in the other language.
+	pub also: Vec<String>,
+	/// Words MyInstants finds nothing for.
+	pub unknown: Vec<String>,
 }
 
 /// How the connection to Voicenux is.
@@ -677,17 +681,30 @@ impl VoicenuxClient {
 			"transcribe" => {
 				state.listening = false;
 				let text = Value::from(fake.said.clone());
-				return Box::pin(async move { Ok(crate::obj! { "text" => text }) });
+				let also = Value::from(fake.also.clone());
+				return Box::pin(async move { Ok(crate::obj! { "text" => text, "alternatives" => also }) });
 			}
 			// Found sounds stay off the soundboard, like in Voicenux: "found-1" has the most likes.
 			"find-sound" => {
 				let arg = arg.unwrap_or_default();
-				let (name, rank) = match serde_json::from_str::<Value>(arg) {
-					Ok(Value::Object(o)) => (o["words"].as_str().unwrap_or_default().to_string(), o["rank"].as_u64().unwrap_or(1)),
-					_ => (arg.to_string(), 1),
+				let (readings, rank) = match serde_json::from_str::<Value>(arg) {
+					Ok(o) if o.is_object() => {
+						let also = o["alternatives"].as_array().into_iter().flatten().filter_map(Value::as_str).map(String::from);
+						(
+							std::iter::once(o["words"].as_str().unwrap_or_default().to_string()).chain(also).collect::<Vec<_>>(),
+							o["rank"].as_u64().unwrap_or(1),
+						)
+					}
+					_ => (vec![arg.to_string()], 1),
+				};
+				let first = readings[0].clone();
+				let Some(words) = readings.into_iter().find(|w| !fake.unknown.contains(w)) else {
+					return Box::pin(async move { Err(Error(format!("nothing found for \"{first}\""))) });
 				};
 				let id = format!("found-{rank}");
-				return Box::pin(async move { Ok(crate::obj! { "id" => id, "name" => name, "icon" => "collision", "rank" => rank }) });
+				return Box::pin(async move {
+					Ok(crate::obj! { "id" => id, "name" => words.clone(), "icon" => "collision", "words" => words, "rank" => rank })
+				});
 			}
 			"find-voice" => {
 				let said = arg.unwrap_or_default().trim_matches(|c: char| c.is_ascii_punctuation()).to_lowercase();

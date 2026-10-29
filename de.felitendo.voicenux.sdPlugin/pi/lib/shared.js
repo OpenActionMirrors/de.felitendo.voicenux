@@ -152,7 +152,7 @@ export const DE = {
 	"Automatic": "Automatisch",
 	"English": "Englisch",
 	"German": "Deutsch",
-	"While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (290 MB).": "Solange du die Taste hältst, hören dich andere nicht. Beim ersten Mal lädt Voicenux seine Spracherkennung (290 MB).",
+	"While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (970 MB).": "Solange du die Taste hältst, hören dich andere nicht. Beim ersten Mal lädt Voicenux seine Spracherkennung (970 MB).",
 	"While the sound plays": "Solange der Sound läuft",
 	"Turns the voice changer on or off. When it is off, others hear your own voice.": "Schaltet den Stimmverzerrer an oder aus. Ist er aus, hören andere deine echte Stimme.",
 	"Mutes your microphone in Voicenux. Others hear nothing, sounds of the soundboard still play.": "Schaltet dein Mikrofon in Voicenux stumm. Andere hören dich nicht, Sounds vom Soundboard laufen weiter.",

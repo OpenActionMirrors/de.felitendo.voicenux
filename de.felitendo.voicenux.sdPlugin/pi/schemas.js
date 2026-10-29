@@ -266,7 +266,7 @@ export const SCHEMAS = {
 			},
 			{ type: "note", text: "Not the right one? Press twice quickly: the key takes the sound with the next most likes. It does not play it, press again to hear it.", section: CONTROLS },
 			LANGUAGE,
-			{ type: "note", text: "While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (290 MB).", section: CONTROLS },
+			{ type: "note", text: "While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (970 MB).", section: CONTROLS },
 			// The sound it found, with the lens. Voicenux keeps it off the soundboard, so it is not in the lists.
 			titleTiles("Name", "showName", "nameAt", (at, s, page) => {
 				if (!s.sound) return glyphKeySvg("saysound", { title: at ? t("Sound") : "", titleAt: at || "below" });
