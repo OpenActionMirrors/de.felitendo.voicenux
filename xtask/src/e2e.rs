@@ -15,6 +15,9 @@ fn sleep(ms: u64) {
 	std::thread::sleep(Duration::from_millis(ms));
 }
 
+// OpenDeck sends a new key image to the deck a little after the change, now and then seconds later.
+const IMAGE_WAIT: u64 = 8000;
+
 // encodeURIComponent
 fn encode(text: &str) -> String {
 	text.bytes()
@@ -63,6 +66,23 @@ impl Env {
 
 	fn key_image(&self, key: usize) -> Result<Value> {
 		Ok(self.json(&format!("{}/api/state", self.deck), false)?["keys"][key].clone())
+	}
+
+	/// The image of a key once it stopped changing. Right after a change the deck may still show
+	/// the old one, and a test that compares with it would wait for nothing.
+	fn steady_image(&self, key: usize) -> Result<Value> {
+		let until = Instant::now() + Duration::from_millis(IMAGE_WAIT);
+		let mut image = self.key_image(key)?;
+		let mut since = Instant::now();
+		while Instant::now() < until && since.elapsed() < Duration::from_millis(500) {
+			sleep(80);
+			let now = self.key_image(key)?;
+			if now != image {
+				image = now;
+				since = Instant::now();
+			}
+		}
+		Ok(image)
 	}
 
 	/// The state of Voicenux.
@@ -151,11 +171,11 @@ pub fn run(args: &[String]) -> Result {
 	sleep(600);
 
 	s.test("a voice key uses its voice and gets the frame", || {
-		let before = e.key_image(1)?;
+		let before = e.steady_image(1)?;
 		e.press(1, 80)?;
 		wait_for("voice = deep", 4000, || Ok(e.voice()? == "deep"))?;
-		wait_for("key 1 shows the frame", 4000, || Ok(e.key_image(1)? != before))?;
-		wait_for("key 0 loses its frame", 4000, || Ok(e.key_image(0)? != before))
+		wait_for("key 1 shows the frame", IMAGE_WAIT, || Ok(e.key_image(1)? != before))?;
+		wait_for("key 0 loses its frame", IMAGE_WAIT, || Ok(e.key_image(0)? != before))
 	});
 
 	s.test("pressed again, the toggle voice key goes back to your own voice", || {
@@ -170,11 +190,10 @@ pub fn run(args: &[String]) -> Result {
 
 	s.test("push to change voice: changed only while the key is held", || {
 		e.act("voice-changer", Some("off"))?;
-		sleep(300);
-		let off = e.key_image(5)?;
+		let off = e.steady_image(5)?;
 		e.deck_post("/api/key/5/down")?;
 		wait_for("voice changer on", 4000, || Ok(e.vn()?["voice_changer"] == true))?;
-		wait_for("key 5 turns white", 4000, || Ok(e.key_image(5)? != off))?;
+		wait_for("key 5 turns white", IMAGE_WAIT, || Ok(e.key_image(5)? != off))?;
 		e.deck_post("/api/key/5/up")?;
 		wait_for("voice changer off", 4000, || Ok(e.vn()?["voice_changer"] == false))?;
 		e.act("voice-changer", Some("on")).map(|_| ())
@@ -239,11 +258,11 @@ pub fn run(args: &[String]) -> Result {
 	});
 
 	s.test("a sound key plays its sound and gets the frame", || {
-		let before = e.key_image(3)?;
+		let before = e.steady_image(3)?;
 		e.press(3, 80)?;
 		wait_for("bruh plays", 4000, || Ok(e.playing()?.iter().any(|p| p == "bruh")))?;
-		wait_for("key 3 shows the frame", 4000, || Ok(e.key_image(3)? != before))?;
-		wait_for("key 3 back without frame", 8000, || Ok(e.key_image(3)? == before))
+		wait_for("key 3 shows the frame", IMAGE_WAIT, || Ok(e.key_image(3)? != before))?;
+		wait_for("key 3 back without frame", IMAGE_WAIT, || Ok(e.key_image(3)? == before))
 	});
 
 	s.test("a toggle sound key stops its sound", || {
@@ -257,23 +276,21 @@ pub fn run(args: &[String]) -> Result {
 	s.test("stop sounds key stops everything and is white while sounds play", || {
 		// The sound of the test before may still be going out.
 		wait_for("nothing plays", 4000, || Ok(e.playing()?.is_empty()))?;
-		sleep(400);
-		let idle = e.key_image(12)?;
+		let idle = e.steady_image(12)?;
 		e.act("sound", Some("sad-violin"))?;
-		wait_for("key 12 turns white", 4000, || Ok(e.key_image(12)? != idle))?;
+		wait_for("key 12 turns white", IMAGE_WAIT, || Ok(e.key_image(12)? != idle))?;
 		e.press(12, 80)?;
 		wait_for("nothing plays", 4000, || Ok(e.playing()?.is_empty()))?;
-		wait_for("key 12 gray again", 4000, || Ok(e.key_image(12)? == idle))
+		wait_for("key 12 gray again", IMAGE_WAIT, || Ok(e.key_image(12)? == idle))
 	});
 
 	s.test("random sound key plays a sound and shows the next one", || {
 		e.act("stop-sounds", None)?;
 		wait_for("nothing plays", 4000, || Ok(e.playing()?.is_empty()))?;
-		sleep(400);
-		let shown = e.key_image(8)?;
+		let shown = e.steady_image(8)?;
 		e.press(8, 80)?;
 		wait_for("a sound plays", 4000, || Ok(e.playing()?.len() == 1))?;
-		wait_for("key 8 shows another sound", 4000, || Ok(e.key_image(8)? != shown))?;
+		wait_for("key 8 shows another sound", IMAGE_WAIT, || Ok(e.key_image(8)? != shown))?;
 		e.act("stop-sounds", None).map(|_| ())
 	});
 
