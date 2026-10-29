@@ -5,6 +5,8 @@
 // tiles: for choices that change how the key looks. Like segmented, with a small picture of the
 // key above each choice: preview(value, settings, page) is its SVG. value(settings) and apply(value)
 // can map the choice onto more than one setting. page has the lists and pictureUrl().
+// howto: how the key works, under the help. Each step is a way to press it (gesture: hold, press
+// or twice) with a small key(settings, page) that shows it, and what it does.
 // The texts are English. src/i18n/de.rs has the German ones.
 import { t } from "./lib/i18n.js";
 import { COLORS, VOLUME_GLYPHS } from "./lib/icons.js";
@@ -236,6 +238,20 @@ export const SCHEMAS = {
 	},
 	[`${ID}.saysound`]: {
 		help: "Hold the key and say a sound, like vine boom. Voicenux finds the one most people like on MyInstants and puts it on this key. Your soundboard stays as it is. Press the key to play it.",
+		howto: [
+			{ gesture: "hold", label: "Hold", text: "Say a sound", key: () => glyphKeySvg("mic", { color: COLORS.red }) },
+			{
+				gesture: "press",
+				label: "Press",
+				text: "It plays",
+				key: (s, page) => {
+					if (!s.sound) return glyphKeySvg("saysound");
+					const item = page.find("sounds", s.sound) ?? { icon: s.soundIcon };
+					return pictureKeySvg({ src: page.pictureUrl(item.icon), fallback: "sound", frame: "on" });
+				},
+			},
+			{ gesture: "twice", label: "Press twice", text: "The next sound", key: () => glyphKeySvg("next") },
+		],
 		fields: [
 			{
 				key: "play",
@@ -262,6 +278,18 @@ export const SCHEMAS = {
 	},
 	[`${ID}.sayvoice`]: {
 		help: "Hold the key and say one of your voices, like Darth Vader. It only picks out of the voices you have in Voicenux, nothing is searched online. Press the key to turn the voice on or off.",
+		howto: [
+			{ gesture: "hold", label: "Hold", text: "Say a voice", key: () => glyphKeySvg("mic", { color: COLORS.red }) },
+			{
+				gesture: "press",
+				label: "Press",
+				text: "Voice on or off",
+				key: (s, page) => {
+					const voice = s.voice ? page.find("voices", s.voice) : null;
+					return voice ? pictureKeySvg({ src: page.pictureUrl(voice.icon), frame: "on" }) : glyphKeySvg("sayvoice");
+				},
+			},
+		],
 		fields: [
 			{
 				key: "press",

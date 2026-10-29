@@ -318,12 +318,44 @@ function render() {
 	}
 	const app = document.getElementById("app");
 	const focus = document.activeElement?.dataset?.focusKey;
-	const parts = [renderStatusCard(), problem() ? renderGuide() : null, renderKeyError(), schema.help ? h("p", { class: "note" }, t(schema.help)) : null, ...renderFields()];
+	const parts = [
+		renderStatusCard(),
+		problem() ? renderGuide() : null,
+		renderKeyError(),
+		schema.help ? h("p", { class: "note" }, t(schema.help)) : null,
+		schema.howto ? renderHowto(schema.howto) : null,
+		...renderFields(),
+	];
 	app.replaceChildren(...parts.flat(Infinity).filter(Boolean));
 	// WebKitGTK in OpenDeck sometimes paints only parts of the page after a big change and keeps old
 	// pixels elsewhere. A tiny change of the opacity makes it paint the whole page again.
 	app.style.opacity = app.style.opacity === "0.999" ? "" : "0.999";
 	if (focus) document.querySelector(`[data-focus-key="${CSS.escape(focus)}"]`)?.focus();
+}
+
+// The ways to press the key: a long bar is holding, a dot a press.
+const GESTURES = {
+	hold: '<svg width="30" height="8" viewBox="0 0 30 8"><rect width="30" height="8" rx="4"/></svg>',
+	press: '<svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>',
+	twice: '<svg width="20" height="8" viewBox="0 0 20 8"><circle cx="4" cy="4" r="4"/><circle cx="16" cy="4" r="4"/></svg>',
+};
+
+// How the key works: a small key for each way to press it, and what it does.
+function renderHowto(steps) {
+	return h(
+		"div",
+		{ class: "howto" },
+		steps.map((step, i) =>
+			h(
+				"div",
+				{ class: "howto-step" },
+				h("span", { class: "tile-key", innerHTML: ownIds(step.key(settings, page), `howto-${i}`) }),
+				h("span", { class: "howto-gesture", innerHTML: GESTURES[step.gesture] }),
+				h("span", { class: "howto-label" }, t(step.label)),
+				h("span", { class: "howto-text" }, t(step.text)),
+			),
+		),
+	);
 }
 
 function renderStatus() {

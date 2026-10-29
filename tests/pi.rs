@@ -144,6 +144,10 @@ fn every_text_has_a_german_translation() {
 		for (const schema of Object.values(SCHEMAS)) {
 			add(schema.help);
 			add(schema.lookTitle);
+			for (const step of schema.howto ?? []) {
+				add(step.label);
+				add(step.text);
+			}
 			for (const field of schema.fields ?? []) {
 				for (const key of ["label", "text", "hint", "unit"]) add(field[key]);
 				// Section titles. "look" is a name in the code, the page shows "On the key" or lookTitle.

@@ -628,6 +628,54 @@ textarea {
 	color: var(--bright);
 }
 
+/* How a key works: a small key for each way to press it, and what it does. */
+.howto {
+	display: grid;
+	grid-auto-columns: 1fr;
+	grid-auto-flow: column;
+	gap: 6px;
+	margin: 2px 0 12px;
+}
+
+.howto-step {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 10px 6px 9px;
+	border-radius: 8px;
+	background: var(--card);
+	text-align: center;
+}
+
+.howto .tile-key {
+	width: 54px;
+	height: 54px;
+	border-radius: 10px;
+}
+
+.howto-gesture {
+	display: flex;
+	align-items: center;
+	height: 8px;
+	margin: 9px 0 7px;
+}
+
+.howto-gesture svg {
+	display: block;
+	fill: var(--accent);
+}
+
+.howto-label {
+	color: var(--bright);
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.howto-text {
+	color: var(--muted);
+	line-height: 1.2;
+}
+
 button.btn {
 	height: 26px;
 	padding: 0 12px;
