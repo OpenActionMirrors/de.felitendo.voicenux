@@ -65,6 +65,8 @@ pub struct Sound {
 	pub id: String,
 	pub name: String,
 	pub icon: String,
+	/// It has a star. Voicenux 0.3.0 and older do not say.
+	pub favorite: bool,
 }
 
 /// What Voicenux says right now: the voice in use, the switches and the soundboard volume.
@@ -801,7 +803,7 @@ mod tests {
 		assert_eq!((state.voice, state.sound_volume, state.mute, state.hear_sounds), (None, Some(55.0), true, false));
 		assert_eq!(client.playing(), ["airhorn"]);
 		client.on_event("sounds", &json!([{ "id": "coin", "name": "Coin", "icon": "coin" }, "not a sound"]));
-		assert_eq!(client.sounds(), [Sound { id: "coin".into(), name: "Coin".into(), icon: "coin".into() }]);
+		assert_eq!(client.sounds(), [Sound { id: "coin".into(), name: "Coin".into(), icon: "coin".into(), favorite: false }]);
 	}
 
 	#[test]

@@ -502,7 +502,7 @@ pub(crate) mod testing {
 	}
 
 	pub fn sound(id: &str, name: &str, icon: &str) -> Sound {
-		Sound { id: id.into(), name: name.into(), icon: icon.into() }
+		Sound { id: id.into(), name: name.into(), icon: icon.into(), favorite: false }
 	}
 
 	/// A plugin with one key of this action, visible and online, and a Voicenux that answers like

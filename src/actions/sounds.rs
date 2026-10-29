@@ -375,11 +375,13 @@ pub static SOUND_VOLUME_DIAL: Kind = Kind {
 };
 
 // ----- Stream Deck + dial: turn to pick a sound (with its picture), press or touch to play it. -----
-// play: "restart" (from the start) or "toggle" (play and stop). It stays on the sound you picked.
+// list: "all" sounds or only "favorites". play: "restart" (from the start) or "toggle" (play and
+// stop). It stays on the sound you picked.
 
 #[derive(Deserialize, Default)]
 #[serde(default, rename_all = "camelCase")]
 struct SoundDialSettings {
+	list: String,
 	play: String,
 }
 
@@ -391,10 +393,23 @@ struct SoundPick {
 struct SoundDial;
 
 impl SoundDial {
+	/// The sounds to turn through. Favorites only when there are some.
+	fn list(&self, k: &KeyRc) -> Vec<SoundInfo> {
+		let all = k.client.sounds();
+		if k.settings::<SoundDialSettings>().list == "favorites" {
+			let favorites: Vec<SoundInfo> = all.iter().filter(|s| s.favorite).cloned().collect();
+			if !favorites.is_empty() {
+				return favorites;
+			}
+		}
+		all
+	}
+
 	/// The sound picked, or the first one.
 	fn target(&self, k: &KeyRc) -> Option<SoundInfo> {
+		let list = self.list(k);
 		let selected = k.own::<SoundPick>().selected.clone();
-		selected.and_then(|id| k.client.sound(&id)).or_else(|| k.client.sounds().into_iter().next())
+		selected.and_then(|id| list.iter().find(|s| s.id == id).cloned()).or_else(|| list.into_iter().next())
 	}
 }
 
@@ -427,7 +442,7 @@ impl Behavior for SoundDial {
 				"picture": dial_picture(None, "sound"),
 			}));
 		};
-		let sounds = k.client.sounds();
+		let sounds = self.list(k);
 		let playing = k.client.playing().contains(&sound.id);
 		let info = match sounds.iter().position(|s| s.id == sound.id) {
 			_ if playing => t("Playing"),
@@ -444,7 +459,7 @@ impl Behavior for SoundDial {
 	}
 
 	async fn on_dial_rotate(&self, k: &KeyRc, ticks: f64) -> Res<()> {
-		let sounds = k.client.sounds();
+		let sounds = self.list(k);
 		if sounds.is_empty() {
 			return Ok(());
 		}
@@ -469,7 +484,7 @@ impl Behavior for SoundDial {
 pub static SOUND_DIAL: Kind = Kind {
 	uuid: "de.felitendo.voicenux.sounddial",
 	name: "SoundDial",
-	defaults: || defaults(json!({ "play": "restart", "disableTouch": false })),
+	defaults: || defaults(json!({ "list": "all", "play": "restart", "disableTouch": false })),
 	behavior: &SoundDial,
 	new_state: || Box::new(SoundPick::default()),
 	..Kind::BASE
@@ -581,6 +596,29 @@ mod tests {
 			k.client.set_sounds(vec![sound("airhorn", "Air Horn", "postal-horn")]);
 			SoundDial.on_change(&k, Change::Sounds);
 			assert_eq!(SoundDial.target(&k).map(|s| s.id), Some("airhorn".into()));
+		})
+		.await;
+	}
+
+	#[tokio::test]
+	async fn a_sound_dial_can_turn_through_favorites_only() {
+		local(async {
+			let (_p, k) = key(&SOUND_DIAL, json!({ "list": "favorites" }));
+			let star = |s: SoundInfo| SoundInfo { favorite: true, ..s };
+			// No stars yet: all sounds.
+			k.client.set_sounds(vec![sound("airhorn", "Air Horn", "postal-horn"), sound("bruh", "Bruh", "face")]);
+			assert_eq!(SoundDial.list(&k).len(), 2);
+			k.client.set_sounds(vec![
+				sound("airhorn", "Air Horn", "postal-horn"),
+				star(sound("bruh", "Bruh", "face")),
+				sound("coin", "Coin", "coin"),
+				star(sound("drum", "Drum Roll", "drum")),
+			]);
+			assert_eq!(SoundDial.target(&k).map(|s| s.id), Some("bruh".into()));
+			SoundDial.on_dial_rotate(&k, 1.0).await.unwrap();
+			assert_eq!(SoundDial.target(&k).map(|s| s.id), Some("drum".into()));
+			SoundDial.on_dial_rotate(&k, 1.0).await.unwrap();
+			assert_eq!(SoundDial.target(&k).map(|s| s.id), Some("bruh".into()));
 		})
 		.await;
 	}

@@ -333,6 +333,16 @@ export const SCHEMAS = {
 		help: "Turn to pick a sound of the soundboard, press or touch to play it.",
 		fields: [
 			{
+				key: "list",
+				label: "Sounds",
+				type: "segmented",
+				options: [
+					["all", "All"],
+					["favorites", "Favorites"],
+				],
+			},
+			{ type: "note", text: "Star sounds in Voicenux to make them favorites.", showIf: (s) => s.list === "favorites" },
+			{
 				key: "play",
 				label: "Press does",
 				type: "select",
