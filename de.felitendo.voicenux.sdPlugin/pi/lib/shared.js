@@ -122,8 +122,15 @@ export const DE = {
 	"Thinking": "Moment …",
 	"Hold the key and say a sound": "Halte die Taste und sag einen Sound",
 	"Nothing heard. Hold the key and say a sound.": "Nichts gehört. Halte die Taste und sag einen Sound.",
-	"Still looking for the last sound": "Sucht noch den letzten Sound",
-	"Saying a sound needs a newer Voicenux": "Sound ansagen braucht ein neueres Voicenux",
+	"Still looking for the last one": "Sucht noch",
+	"Saying needs a newer Voicenux": "Ansagen braucht ein neueres Voicenux",
+	"Hold the key and say one of your voices": "Halte die Taste und sag eine deiner Stimmen",
+	"Nothing heard. Hold the key and say one of your voices.": "Nichts gehört. Halte die Taste und sag eine deiner Stimmen.",
+	"Voicenux found no voice": "Voicenux hat keine Stimme gefunden",
+	"No voice called {name} in Voicenux. Voices are not searched online.": "Keine Stimme namens {name} in Voicenux. Stimmen werden nicht online gesucht.",
+	"Not the right one? Press twice quickly: the key takes the sound with the next most likes. It does not play it, press again to hear it.": "Nicht der richtige? Drück zweimal schnell: Die Taste nimmt den Sound mit den nächstmeisten Likes. Sie spielt ihn nicht ab, drück noch mal, um ihn zu hören.",
+	"Hold the key and say one of your voices, like Darth Vader. It only picks out of the voices you have in Voicenux, nothing is searched online. Press the key to turn the voice on or off.": "Halte die Taste und sag eine deiner Stimmen, etwa Darth Vader. Sie wählt nur aus den Stimmen, die du in Voicenux hast, online wird nichts gesucht. Drück die Taste, um die Stimme an- oder auszuschalten.",
+	"While you hold the key, others do not hear you. New sounds from the internet: that is Say a Sound.": "Solange du die Taste hältst, hören dich andere nicht. Neue Sounds aus dem Internet findet „Sound ansagen“.",
 	"Playing": "Läuft",
 	"Turn to pick a sound of the soundboard, press or touch to play it.": "Drehen wählt einen Sound vom Soundboard, Drücken oder Tippen spielt ihn ab.",
 	"Voicenux found no sound": "Voicenux hat keinen Sound gefunden",
@@ -180,6 +187,7 @@ export const GLYPHS = {
 	"voice": "<mask id=\"cut-voice\"><g fill=\"#FFF\" stroke=\"none\"><path d=\"M3 4.2c2.6-1.6 15.4-1.6 18 0v6.6c0 6.2-4.3 10.6-9 10.6S3 17 3 10.8z\" stroke=\"#FFF\" stroke-width=\"1.2\" stroke-linejoin=\"round\"/></g><g fill=\"none\" stroke=\"#000\"><path d=\"M6.6 9.6c.8-.9 2.4-.9 3.2 0M14.2 9.6c.8-.9 2.4-.9 3.2 0M8 14.6c2 2.3 6 2.3 8 0\"/></g><g fill=\"none\" stroke=\"#FFF\"></g></mask><rect x=\"-4\" y=\"-4\" width=\"32\" height=\"32\" fill=\"currentColor\" stroke=\"none\" mask=\"url(#cut-voice)\"/>",
 	"sound": "<path d=\"M8.6 17.6V6.2l11-2.4v11.4\" stroke-width=\"2.6\"/><path d=\"M8.6 6.2l11-2.4v3.6l-11 2.4z\" fill=\"currentColor\" stroke-width=\"1.4\"/><ellipse cx=\"6\" cy=\"17.8\" rx=\"3.4\" ry=\"2.8\" fill=\"currentColor\" stroke=\"none\"/><ellipse cx=\"17\" cy=\"15.4\" rx=\"3.4\" ry=\"2.8\" fill=\"currentColor\" stroke=\"none\"/>",
 	"mic": "<rect x=\"8\" y=\"1.8\" width=\"8\" height=\"13\" rx=\"4\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M4.6 11.2a7.4 7.4 0 0 0 14.8 0M12 18.6v3.2\"/>",
+	"sayvoice": "<circle cx=\"10\" cy=\"10\" r=\"7.6\"/><path d=\"m15.5 15.5 5.4 5.4\" stroke-width=\"3.4\"/><circle cx=\"7.6\" cy=\"8.4\" r=\"1.3\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"12.4\" cy=\"8.4\" r=\"1.3\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M7.1 11.6c1.6 1.8 4.2 1.8 5.8 0\" stroke-width=\"2\"/>",
 	"saysound": "<circle cx=\"10\" cy=\"10\" r=\"7.6\"/><path d=\"m15.5 15.5 5.4 5.4\" stroke-width=\"3.4\"/><path d=\"M6.8 8.6v2.8M10 6.4v7.2M13.2 8.6v2.8\" stroke-width=\"2.2\"/>",
 	"micOff": "<mask id=\"cut-micOff\"><g fill=\"#FFF\" stroke=\"none\"><rect x=\"8\" y=\"1.8\" width=\"8\" height=\"13\" rx=\"4\"/><path d=\"M4.6 11.2a7.4 7.4 0 0 0 14.8 0M12 18.6v3.2\" fill=\"none\" stroke=\"#FFF\"/></g><g fill=\"none\" stroke=\"#000\"><path d=\"m3 3 18 18\" stroke-width=\"6\"/></g><g fill=\"none\" stroke=\"#FFF\"><path d=\"m3 3 18 18\"/></g></mask><rect x=\"-4\" y=\"-4\" width=\"32\" height=\"32\" fill=\"currentColor\" stroke=\"none\" mask=\"url(#cut-micOff)\"/>",
 	"headphones": "<path d=\"M4.3 15.5v-3a7.7 7.7 0 0 1 15.4 0v3\"/><path d=\"M3 13.5h3.2a1.3 1.3 0 0 1 1.3 1.3v5.4a1.3 1.3 0 0 1-1.3 1.3H4.3A1.3 1.3 0 0 1 3 20.2zM21 13.5h-3.2a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3h1.9a1.3 1.3 0 0 0 1.3-1.3z\" fill=\"currentColor\" stroke-width=\"1.4\"/>",
@@ -227,6 +235,12 @@ export const FIT = {
 		"cy": 12.03,
 		"w": 17.2,
 		"h": 21.2
+	},
+	"sayvoice": {
+		"cx": 11.681,
+		"cy": 11.742,
+		"w": 21.4,
+		"h": 21.4
 	},
 	"saysound": {
 		"cx": 11.63,

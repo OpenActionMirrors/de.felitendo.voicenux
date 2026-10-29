@@ -119,6 +119,7 @@ actions! {
 	StopSounds => "de.felitendo.voicenux.stopsounds",
 	RandomSound => "de.felitendo.voicenux.randomsound",
 	SaySound => "de.felitendo.voicenux.saysound",
+	SayVoice => "de.felitendo.voicenux.sayvoice",
 	SoundVolume => "de.felitendo.voicenux.soundvolume",
 	HearSounds => "de.felitendo.voicenux.hearsounds",
 	VoiceDial => "de.felitendo.voicenux.voicedial",

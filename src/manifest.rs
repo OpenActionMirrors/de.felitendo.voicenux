@@ -144,11 +144,22 @@ pub static ACTIONS: &[ActionDef] = &[
 		"saysound",
 		"Say a Sound",
 		"saysound",
-		"Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it.",
+		"Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it, twice for the next one.",
 		&["saysound"],
 		[
 			"Sound ansagen",
-			"Taste halten und einen Sound sagen. Sie sucht den beliebtesten auf MyInstants und behält ihn. Drücken spielt ihn ab.",
+			"Taste halten und einen Sound sagen. Sie sucht den beliebtesten auf MyInstants und behält ihn. Drücken spielt ihn ab, zweimal nimmt den nächsten.",
+		],
+	),
+	key(
+		"sayvoice",
+		"Say a Voice",
+		"sayvoice",
+		"Hold the key and say one of your voices, like Darth Vader. Only voices you have in Voicenux, nothing is searched online. Press to turn it on or off.",
+		&["sayvoice"],
+		[
+			"Stimme ansagen",
+			"Taste halten und eine deiner Stimmen sagen, etwa Darth Vader. Nur Stimmen aus Voicenux, online wird nichts gesucht. Drücken schaltet sie an oder aus.",
 		],
 	),
 	key(

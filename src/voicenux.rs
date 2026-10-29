@@ -649,7 +649,9 @@ impl VoicenuxClient {
 			return Box::pin(async { Ok(Value::Null) });
 		}
 		fake.calls.push((action.to_string(), arg.map(String::from)));
-		if fake.old && matches!(action, "sound-restart" | "sound-toggle" | "sound-overlap" | "listen" | "transcribe" | "find-sound") {
+		if fake.old
+			&& matches!(action, "sound-restart" | "sound-toggle" | "sound-overlap" | "listen" | "transcribe" | "find-sound" | "find-voice")
+		{
 			let error = format!("unknown action \"{action}\", see API.md");
 			return Box::pin(async move { Err(Error(error)) });
 		}
@@ -675,10 +677,23 @@ impl VoicenuxClient {
 				let text = Value::from(fake.said.clone());
 				return Box::pin(async move { Ok(crate::obj! { "text" => text }) });
 			}
-			// Found sounds stay off the soundboard, like in Voicenux.
+			// Found sounds stay off the soundboard, like in Voicenux: "found-1" has the most likes.
 			"find-sound" => {
-				let name = arg.unwrap_or_default().to_string();
-				return Box::pin(async move { Ok(crate::obj! { "id" => "found-1", "name" => name, "icon" => "collision" }) });
+				let arg = arg.unwrap_or_default();
+				let (name, rank) = match serde_json::from_str::<Value>(arg) {
+					Ok(Value::Object(o)) => (o["words"].as_str().unwrap_or_default().to_string(), o["rank"].as_u64().unwrap_or(1)),
+					_ => (arg.to_string(), 1),
+				};
+				let id = format!("found-{rank}");
+				return Box::pin(async move { Ok(crate::obj! { "id" => id, "name" => name, "icon" => "collision", "rank" => rank }) });
+			}
+			"find-voice" => {
+				let said = arg.unwrap_or_default().trim_matches(|c: char| c.is_ascii_punctuation()).to_lowercase();
+				let found = data.voices.iter().find(|v| v.name.to_lowercase() == said).cloned();
+				return Box::pin(async move {
+					let v = found.ok_or_else(|| Error(format!("no voice called \"{said}\"")))?;
+					Ok(crate::obj! { "id" => v.id, "name" => v.name, "icon" => v.icon })
+				});
 			}
 			_ => {}
 		}

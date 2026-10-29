@@ -7,6 +7,7 @@ pub static FIT: &[(&str, Fit)] = &[
 	("voice", Fit { cx: 12.0, cy: 11.68, w: 19.2, h: 19.6 }),
 	("sound", Fit { cx: 12.465, cy: 11.385, w: 18.3, h: 18.1 }),
 	("mic", Fit { cx: 12.0, cy: 12.03, w: 17.2, h: 21.2 }),
+	("sayvoice", Fit { cx: 11.681, cy: 11.742, w: 21.4, h: 21.4 }),
 	("saysound", Fit { cx: 11.63, cy: 11.63, w: 21.4, h: 21.4 }),
 	("micOff", Fit { cx: 11.912, cy: 12.044, w: 20.4, h: 21.2 }),
 	("headphones", Fit { cx: 12.0, cy: 13.411, w: 19.4, h: 18.6 }),

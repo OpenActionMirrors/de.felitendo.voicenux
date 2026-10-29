@@ -76,6 +76,19 @@ const ID = "de.felitendo.voicenux";
 // Every dial: a touch does what a press does, unless touches are off.
 const TOUCH = { key: "disableTouch", label: "Touch screen", type: "checkbox", text: "Ignore touches", section: MORE };
 
+// Keys that listen: the language you speak, for the speech recognition of Voicenux.
+const LANGUAGE = {
+	key: "language",
+	label: "You speak",
+	type: "select",
+	options: [
+		["auto", "Automatic"],
+		["en", "English"],
+		["de", "German"],
+	],
+	section: CONTROLS,
+};
+
 // held: the names of the two choices that hold the switch only while the key is held, and the note.
 const HELD = ["On only while held", "Off only while held", "On only while held: it turns off again when you let go of the key. Off only while held is the other way round."];
 const switchSchema = (glyph, help, [holdOn, holdOff, note] = HELD) => ({
@@ -235,17 +248,8 @@ export const SCHEMAS = {
 				],
 				section: CONTROLS,
 			},
-			{
-				key: "language",
-				label: "You speak",
-				type: "select",
-				options: [
-					["auto", "Automatic"],
-					["en", "English"],
-					["de", "German"],
-				],
-				section: CONTROLS,
-			},
+			{ type: "note", text: "Not the right one? Press twice quickly: the key takes the sound with the next most likes. It does not play it, press again to hear it.", section: CONTROLS },
+			LANGUAGE,
 			{ type: "note", text: "While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (290 MB).", section: CONTROLS },
 			// The sound it found, with the lens. Voicenux keeps it off the soundboard, so it is not in the lists.
 			titleTiles("Name", "showName", "nameAt", (at, s, page) => {
@@ -254,6 +258,29 @@ export const SCHEMAS = {
 				return pictureKeySvg({ src: page.pictureUrl(item.icon), fallback: "sound", title: at ? item.label : "", titleAt: at || "below", badge: "saysound" });
 			}),
 			{ key: "showPlaying", section: LOOK, label: "Frame", type: "checkbox", text: "While the sound plays" },
+		],
+	},
+	[`${ID}.sayvoice`]: {
+		help: "Hold the key and say one of your voices, like Darth Vader. It only picks out of the voices you have in Voicenux, nothing is searched online. Press the key to turn the voice on or off.",
+		fields: [
+			{
+				key: "press",
+				label: "Press does",
+				type: "select",
+				options: [
+					["toggle", "This voice on or off"],
+					["use", "Use this voice"],
+				],
+				section: CONTROLS,
+			},
+			LANGUAGE,
+			{ type: "note", text: "While you hold the key, others do not hear you. New sounds from the internet: that is Say a Sound.", section: CONTROLS },
+			titleTiles("Name", "showName", "nameAt", (at, s, page) => {
+				const voice = s.voice ? page.find("voices", s.voice) : null;
+				if (!voice) return glyphKeySvg("sayvoice", { title: at ? t("Voice") : "", titleAt: at || "below" });
+				return pictureKeySvg({ src: page.pictureUrl(voice.icon), title: at ? voice.label : "", titleAt: at || "below", badge: "saysound" });
+			}),
+			{ key: "showFrame", section: LOOK, label: "Frame", type: "checkbox", text: "While the voice is in use" },
 		],
 	},
 	[`${ID}.soundvolume`]: {

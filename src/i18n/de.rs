@@ -169,8 +169,27 @@ pub static DE: &[(&str, &str)] = &[
 	("Thinking", "Moment …"),
 	("Hold the key and say a sound", "Halte die Taste und sag einen Sound"),
 	("Nothing heard. Hold the key and say a sound.", "Nichts gehört. Halte die Taste und sag einen Sound."),
-	("Still looking for the last sound", "Sucht noch den letzten Sound"),
-	("Saying a sound needs a newer Voicenux", "Sound ansagen braucht ein neueres Voicenux"),
+	("Still looking for the last one", "Sucht noch"),
+	("Saying needs a newer Voicenux", "Ansagen braucht ein neueres Voicenux"),
+	("Hold the key and say one of your voices", "Halte die Taste und sag eine deiner Stimmen"),
+	("Nothing heard. Hold the key and say one of your voices.", "Nichts gehört. Halte die Taste und sag eine deiner Stimmen."),
+	("Voicenux found no voice", "Voicenux hat keine Stimme gefunden"),
+	(
+		"No voice called {name} in Voicenux. Voices are not searched online.",
+		"Keine Stimme namens {name} in Voicenux. Stimmen werden nicht online gesucht.",
+	),
+	(
+		"Not the right one? Press twice quickly: the key takes the sound with the next most likes. It does not play it, press again to hear it.",
+		"Nicht der richtige? Drück zweimal schnell: Die Taste nimmt den Sound mit den nächstmeisten Likes. Sie spielt ihn nicht ab, drück noch mal, um ihn zu hören.",
+	),
+	(
+		"Hold the key and say one of your voices, like Darth Vader. It only picks out of the voices you have in Voicenux, nothing is searched online. Press the key to turn the voice on or off.",
+		"Halte die Taste und sag eine deiner Stimmen, etwa Darth Vader. Sie wählt nur aus den Stimmen, die du in Voicenux hast, online wird nichts gesucht. Drück die Taste, um die Stimme an- oder auszuschalten.",
+	),
+	(
+		"While you hold the key, others do not hear you. New sounds from the internet: that is Say a Sound.",
+		"Solange du die Taste hältst, hören dich andere nicht. Neue Sounds aus dem Internet findet „Sound ansagen“.",
+	),
 	("Playing", "Läuft"),
 	(
 		"Turn to pick a sound of the soundboard, press or touch to play it.",

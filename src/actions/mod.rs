@@ -1,6 +1,7 @@
 // The actions. Each one is a Kind: its settings, what press, hold and double press can do, and the
 // hooks it fills in (Behavior). key/ does the rest for every key: connection, gestures, images.
 mod key;
+pub mod say;
 pub mod sounds;
 pub mod switches;
 pub mod voices;
@@ -165,7 +166,8 @@ pub fn all() -> Vec<&'static Kind> {
 		&voices::NEXT_VOICE,
 		&sounds::STOP_SOUNDS,
 		&sounds::RANDOM_SOUND,
-		&sounds::SAY_SOUND,
+		&say::SAY_SOUND,
+		&say::SAY_VOICE,
 		&sounds::SOUND_VOLUME,
 		&switches::HEAR_SOUNDS,
 		&voices::VOICE_DIAL,

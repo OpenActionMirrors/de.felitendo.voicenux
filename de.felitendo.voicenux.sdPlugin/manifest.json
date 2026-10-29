@@ -208,7 +208,7 @@
 			"UUID": "de.felitendo.voicenux.saysound",
 			"Name": "Say a Sound",
 			"Icon": "images/actions/saysound",
-			"Tooltip": "Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it.",
+			"Tooltip": "Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it, twice for the next one.",
 			"Controllers": [
 				"Keypad"
 			],
@@ -217,6 +217,24 @@
 			"States": [
 				{
 					"Image": "images/keys/saysound",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
+			"UUID": "de.felitendo.voicenux.sayvoice",
+			"Name": "Say a Voice",
+			"Icon": "images/actions/sayvoice",
+			"Tooltip": "Hold the key and say one of your voices, like Darth Vader. Only voices you have in Voicenux, nothing is searched online. Press to turn it on or off.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/sayvoice",
 					"TitleAlignment": "bottom",
 					"FontSize": 11
 				}

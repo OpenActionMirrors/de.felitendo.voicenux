@@ -84,6 +84,13 @@ fn build() -> Vec<(&'static str, String)> {
 			),
 		),
 		("mic", capsule.replace("/>", &format!(r#" {fill} stroke="none"/>"#)) + stand),
+		// A lens over a face: find one of your voices.
+		(
+			"sayvoice",
+			format!(
+				r#"<circle cx="10" cy="10" r="7.6"/><path d="m15.5 15.5 5.4 5.4" stroke-width="3.4"/><circle cx="7.6" cy="8.4" r="1.3" {fill} stroke="none"/><circle cx="12.4" cy="8.4" r="1.3" {fill} stroke="none"/><path d="M7.1 11.6c1.6 1.8 4.2 1.8 5.8 0" stroke-width="2"/>"#
+			),
+		),
 		// A lens over a sound wave: find a sound.
 		(
 			"saysound",
