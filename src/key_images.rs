@@ -29,6 +29,7 @@ pub static KEY_IMAGES: &[(&str, KeyImage)] = &[
 	("background", c("background", G)),
 	("background-on", k("background")),
 	("random", k("random")),
+	("saysound", k("saysound")),
 	("next", k("next")),
 	("stopsounds", c("stop", G)),
 	("stopsounds-on", k("stop")),

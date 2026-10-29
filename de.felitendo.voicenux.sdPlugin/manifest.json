@@ -205,6 +205,24 @@
 			]
 		},
 		{
+			"UUID": "de.felitendo.voicenux.saysound",
+			"Name": "Say a Sound",
+			"Icon": "images/actions/saysound",
+			"Tooltip": "Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "images/keys/saysound",
+					"TitleAlignment": "bottom",
+					"FontSize": 11
+				}
+			]
+		},
+		{
 			"UUID": "de.felitendo.voicenux.background",
 			"Name": "Background",
 			"Icon": "images/actions/background",

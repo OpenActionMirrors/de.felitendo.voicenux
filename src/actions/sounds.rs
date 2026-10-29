@@ -4,6 +4,7 @@ use std::hash::{BuildHasher, Hasher};
 use async_trait::async_trait;
 use serde::Deserialize;
 use serde_json::json;
+use tokio::time::Instant;
 
 use super::{Behavior, Gesture, KeyRc, Kind, Press, defaults};
 use crate::i18n::t;
@@ -11,6 +12,7 @@ use crate::icons::{colors, volume_glyph};
 use crate::js::{self, fmt};
 use crate::render::{Frame, GlyphKey, PictureKey, dial_icon, glyph_key, picture_key};
 use crate::settings::or;
+use crate::timers::Timer;
 use crate::voicenux::{Change, Sound as SoundInfo};
 use crate::{Error, Res};
 
@@ -198,6 +200,248 @@ pub static RANDOM_SOUND: Kind = Kind {
 	..Kind::BASE
 };
 
+// ----- Say a sound: hold the key and say what you want to hear. Voicenux finds the sound most -----
+// people liked on MyInstants and keeps it for the key, off the soundboard. A press plays it. While
+// you hold the key, Voicenux listens, and others do not hear you.
+
+/// Shorter is a press. Voicenux listens from the start anyway, so no word is lost meanwhile.
+const SAY_AFTER_MS: f64 = 400.0;
+/// The first time, Voicenux downloads its speech recognition (about 290 MB).
+const TRANSCRIBE_MS: f64 = 600_000.0;
+const FIND_MS: f64 = 120_000.0;
+
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct SaySoundSettings {
+	/// The id of the sound it found. Not in the list of sounds: Voicenux keeps it off the
+	/// soundboard, unless it was there already. So the key keeps its name and picture too.
+	sound: String,
+	sound_name: String,
+	sound_icon: String,
+	/// How a press plays it: "restart", "toggle" or "overlap".
+	play: String,
+	/// What you speak: "auto" (English or the language of Voicenux), "en" or "de".
+	language: String,
+	show_name: bool,
+	name_at: String,
+	show_playing: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+enum Phase {
+	#[default]
+	Idle,
+	Listening,
+	Searching,
+}
+
+#[derive(Default)]
+struct Saying {
+	/// When the key went down. None while it is up.
+	down: Option<Instant>,
+	/// Why Voicenux does not listen to this press, like an older Voicenux.
+	deaf: Option<Error>,
+	phase: Phase,
+	/// What you said, on the key while it searches.
+	said: String,
+	look: Option<Timer>,
+}
+
+struct SaySound;
+
+impl SaySound {
+	async fn play(&self, k: &KeyRc) -> Res<()> {
+		let s: SaySoundSettings = k.settings();
+		if s.sound.is_empty() {
+			return Err(Error::from("Hold the key and say a sound"));
+		}
+		let mode = if matches!(s.play.as_str(), "toggle" | "overlap") { s.play.as_str() } else { "restart" };
+		play_as(k, mode, &s.sound).await.map_err(|error| {
+			// Voicenux keeps the last 50 sounds it found, one this old is gone.
+			if error.message().starts_with("no sound called") {
+				Error::from("This sound is gone. Hold the key to find a new one.")
+			} else {
+				error
+			}
+		})
+	}
+
+	fn show(&self, k: &KeyRc, phase: Phase) {
+		{
+			let mut x = k.own::<Saying>();
+			x.phase = phase;
+			if phase != Phase::Searching {
+				x.said.clear();
+			}
+		}
+		k.draw();
+	}
+
+	/// What you said, then the sound for it.
+	async fn find(&self, k: &KeyRc) -> Res<()> {
+		let s: SaySoundSettings = k.settings();
+		let language = Some(s.language.as_str()).filter(|l| !l.is_empty() && *l != "auto");
+		let heard = k.client.call_waiting("transcribe", language, TRANSCRIBE_MS).await?;
+		let said = heard["text"].as_str().unwrap_or_default().trim().to_string();
+		if said.is_empty() {
+			return Err(Error::from("Nothing heard. Hold the key and say a sound."));
+		}
+		k.own::<Saying>().said = said.clone();
+		k.draw();
+		let found = k.client.call_waiting("find-sound", Some(&said), FIND_MS).await?;
+		let id = found["id"].as_str().filter(|id| !id.is_empty()).ok_or("Voicenux found no sound")?;
+		k.save_settings(&[("sound", id.into()), ("soundName", found["name"].clone()), ("soundIcon", found["icon"].clone())]);
+		Ok(())
+	}
+}
+
+/// Voicenux 0.3.0 and older cannot listen.
+fn newer(error: Error) -> Error {
+	if error.message().contains("unknown action") { Error::from("Saying a sound needs a newer Voicenux") } else { error }
+}
+
+#[async_trait(?Send)]
+impl Behavior for SaySound {
+	fn render_offline(&self, k: &KeyRc) {
+		k.glyph_for_title("", "below");
+	}
+
+	fn render(&self, k: &KeyRc) {
+		let s: SaySoundSettings = k.settings();
+		let (phase, said) = {
+			let x = k.own::<Saying>();
+			(x.phase, x.said.clone())
+		};
+		let busy = match phase {
+			Phase::Listening => Some(("mic", colors::RED, t("Listening"))),
+			Phase::Searching => Some(("saysound", colors::WHITE, if said.is_empty() { t("Thinking") } else { said })),
+			Phase::Idle => None,
+		};
+		if let Some((glyph, color, title)) = busy {
+			k.own_title(&title);
+			return k.set_image(&glyph_key(glyph, &GlyphKey { color, title: &title, title_at: &s.name_at, ..Default::default() }));
+		}
+		// Nothing found yet: the lens.
+		if s.sound.is_empty() {
+			return k.glyph_for_title("", "below");
+		}
+		// A sound of the soundboard may have a new name by now.
+		let (name, icon) = match k.client.sound(&s.sound) {
+			Some(sound) => (sound.name, sound.icon),
+			None => (s.sound_name, s.sound_icon),
+		};
+		let title = if s.show_name { name.as_str() } else { "" };
+		k.own_title(title);
+		let playing = k.client.playing().contains(&s.sound);
+		let png = k.picture(&icon);
+		k.set_image(&picture_key(&PictureKey {
+			png: png.as_deref(),
+			fallback: "sound",
+			title,
+			title_at: &s.name_at,
+			frame: (s.show_playing && playing).then_some(Frame::On),
+			// Hold for another sound.
+			badge: "saysound",
+			..Default::default()
+		}));
+	}
+
+	fn on_disappear(&self, k: &KeyRc) {
+		let listening = {
+			let mut x = k.own::<Saying>();
+			if let Some(look) = x.look.take() {
+				look.clear();
+			}
+			x.down.take().is_some() && x.deaf.take().is_none()
+		};
+		if listening {
+			// Sent right away, no need to wait for the answer.
+			drop(k.client.call("listen", Some("off")));
+		}
+	}
+
+	async fn on_press(&self, k: &KeyRc, _press: Press) -> Res<()> {
+		if k.is_in_multi_action() {
+			return self.play(k).await;
+		}
+		let now = Instant::now();
+		let busy = {
+			let mut x = k.own::<Saying>();
+			x.down = Some(now);
+			x.deaf = None;
+			x.phase != Phase::Idle
+		};
+		if busy {
+			k.own::<Saying>().deaf = Some(Error::from("Still looking for the last sound"));
+			return Ok(());
+		}
+		if let Err(error) = k.call("listen", Some("on")).await {
+			// A press still plays.
+			k.own::<Saying>().deaf = Some(newer(error));
+			return Ok(());
+		}
+		let look = k.after(SAY_AFTER_MS, move |k| {
+			let held = {
+				let x = k.own::<Saying>();
+				x.down == Some(now) && x.phase == Phase::Idle
+			};
+			if held {
+				SaySound.show(&k, Phase::Listening);
+			}
+		});
+		k.own::<Saying>().look = Some(look);
+		Ok(())
+	}
+
+	async fn on_release(&self, k: &KeyRc) -> Res<()> {
+		let (down, deaf) = {
+			let mut x = k.own::<Saying>();
+			if let Some(look) = x.look.take() {
+				look.clear();
+			}
+			(x.down.take(), x.deaf.take())
+		};
+		// In a multi action the press played already.
+		let Some(down) = down else { return Ok(()) };
+		if down.elapsed().as_secs_f64() * 1000.0 < SAY_AFTER_MS {
+			if deaf.is_none() {
+				let _ = k.call("listen", Some("off")).await;
+			}
+			return self.play(k).await;
+		}
+		if let Some(error) = deaf {
+			return Err(error);
+		}
+		self.show(k, Phase::Searching);
+		let found = self.find(k).await;
+		self.show(k, Phase::Idle);
+		found.map_err(newer)?;
+		k.clear_error();
+		k.show_ok();
+		Ok(())
+	}
+}
+
+pub static SAY_SOUND: Kind = Kind {
+	uuid: "de.felitendo.voicenux.saysound",
+	name: "SaySound",
+	defaults: || {
+		defaults(json!({
+			"sound": "",
+			"soundName": "",
+			"soundIcon": "",
+			"play": "restart",
+			"language": "auto",
+			"showName": true,
+			"nameAt": "below",
+			"showPlaying": true,
+		}))
+	},
+	behavior: &SaySound,
+	new_state: || Box::new(Saying::default()),
+	..Kind::BASE
+};
+
 // ----- Stops every sound. White while something plays. -----
 
 struct StopSounds;
@@ -381,6 +625,7 @@ mod tests {
 	fn every_setting_has_a_default() {
 		assert_defaults::<SoundSettings>(&[&SOUND]);
 		assert_defaults::<RandomSoundSettings>(&[&RANDOM_SOUND]);
+		assert_defaults::<SaySoundSettings>(&[&SAY_SOUND]);
 		assert_defaults::<SoundVolumeSettings>(&[&SOUND_VOLUME]);
 		assert_defaults::<SoundVolumeDialSettings>(&[&SOUND_VOLUME_DIAL]);
 	}
@@ -454,6 +699,66 @@ mod tests {
 			assert_eq!(calls(&k).len(), count, "no call when it is at 100 already");
 			SoundVolume.on_press(&k, args("set")).await.unwrap();
 			assert_eq!(last(&k), ["sound-volume", "50"]);
+		})
+		.await;
+	}
+
+	fn said(k: &KeyRc, words: &str) {
+		if let Some(fake) = k.client.fake.borrow_mut().as_mut() {
+			fake.said = words.into();
+		}
+	}
+
+	async fn hold(k: &KeyRc, ms: f64) {
+		k.key_down(false).await;
+		crate::timers::sleep(ms).await;
+		k.key_up().await;
+	}
+
+	#[tokio::test(start_paused = true)]
+	async fn holding_a_say_key_finds_the_sound_and_a_press_plays_it() {
+		local(async {
+			let (_p, k) = key(&SAY_SOUND, json!({}));
+			said(&k, "Vine boom");
+			k.key_down(false).await;
+			assert!(k.vn().listening, "Voicenux listens from the start");
+			crate::timers::sleep(SAY_AFTER_MS + 100.0).await;
+			assert_eq!(k.own::<Saying>().phase, Phase::Listening);
+			k.key_up().await;
+			assert_eq!(last(&k), ["find-sound", "Vine boom"]);
+			let s: SaySoundSettings = k.settings();
+			assert_eq!((s.sound.as_str(), s.sound_name.as_str(), s.sound_icon.as_str()), ("found-1", "Vine boom", "collision"));
+			assert!(k.client.sound("found-1").is_none(), "not on the soundboard");
+			assert_eq!(k.own::<Saying>().phase, Phase::Idle);
+			let saved =
+				k.sd.sent.as_ref().unwrap().borrow().iter().any(|m| m["event"] == "setSettings" && m["payload"]["sound"] == "found-1");
+			assert!(saved, "OpenDeck keeps the sound");
+			// A press stops listening and plays it.
+			hold(&k, 50.0).await;
+			assert_eq!(calls(&k)[calls(&k).len() - 2].0, "listen");
+			assert_eq!(last(&k), ["sound-restart", "found-1"]);
+			assert!(!k.vn().listening);
+		})
+		.await;
+	}
+
+	#[tokio::test(start_paused = true)]
+	async fn a_say_key_says_why_it_found_nothing() {
+		local(async {
+			let (_p, k) = key(&SAY_SOUND, json!({ "language": "de" }));
+			hold(&k, 50.0).await;
+			assert_eq!(k.last_error().as_deref(), Some("Hold the key and say a sound"));
+			hold(&k, 1000.0).await;
+			assert_eq!(last(&k), ["transcribe", "de"]);
+			assert_eq!(k.last_error().as_deref(), Some("Nothing heard. Hold the key and say a sound."));
+			assert_eq!(k.settings::<SaySoundSettings>().sound, "");
+			// An older Voicenux cannot listen, but it still plays.
+			let (_p, old) = key(&SAY_SOUND, json!({ "sound": "airhorn" }));
+			old_voicenux(&old);
+			hold(&old, 50.0).await;
+			assert_eq!(last(&old), ["sound", "airhorn"]);
+			hold(&old, 1000.0).await;
+			assert_eq!(old.last_error().as_deref(), Some("Saying a sound needs a newer Voicenux"));
 		})
 		.await;
 	}

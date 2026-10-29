@@ -141,6 +141,17 @@ pub static ACTIONS: &[ActionDef] = &[
 		],
 	),
 	key(
+		"saysound",
+		"Say a Sound",
+		"saysound",
+		"Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it.",
+		&["saysound"],
+		[
+			"Sound ansagen",
+			"Taste halten und einen Sound sagen. Sie sucht den beliebtesten auf MyInstants und behält ihn. Drücken spielt ihn ab.",
+		],
+	),
+	key(
 		"background",
 		"Background",
 		"background",

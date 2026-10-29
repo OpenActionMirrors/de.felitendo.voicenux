@@ -22,6 +22,9 @@ const PICTURE_SIZE: f64 = 100.0;
 const PICTURE_WITH_TITLE: f64 = 82.0;
 // Space between a glyph (or picture) and its title.
 const TITLE_GAP: f64 = 16.0;
+// The small glyph on a picture, and how far its box reaches past the corner of the picture.
+const BADGE: f64 = 46.0;
+const BADGE_OUT: f64 = 10.0;
 
 pub fn svg_url(svg: &str) -> String {
 	format!("data:image/svg+xml;base64,{}", base64::engine::general_purpose::STANDARD.encode(svg))
@@ -177,20 +180,25 @@ pub struct PictureKey<'a> {
 	/// Drawn faded, like a gray glyph.
 	pub dim: bool,
 	pub setup: bool,
+	/// A small glyph in the top right corner, like the lens of Say a Sound. "" for none.
+	pub badge: &'a str,
 }
 
 impl Default for PictureKey<'_> {
 	fn default() -> Self {
-		PictureKey { png: None, fallback: "voice", title: "", title_at: "below", frame: None, dim: false, setup: false }
+		PictureKey { png: None, fallback: "voice", title: "", title_at: "below", frame: None, dim: false, setup: false, badge: "" }
 	}
 }
 
+/// A small glyph on the bottom right corner (right, bottom) of a picture.
+fn badge(name: &str, right: f64, bottom: f64) -> String {
+	if name.is_empty() {
+		return String::new();
+	}
+	glyph(name, &GlyphOpts { x: right - BADGE + BADGE_OUT, y: bottom - BADGE + BADGE_OUT, size: BADGE, ..Default::default() })
+}
+
 pub fn picture_key_svg(o: &PictureKey) -> String {
-	let Some(png) = o.png.filter(|p| !p.is_empty()) else {
-		let color = if o.dim { colors::GRAY } else { colors::WHITE };
-		let key = glyph_key_svg(o.fallback, &GlyphKey { color, setup: o.setup, title: o.title, title_at: o.title_at });
-		return key.replacen("</svg>", &format!("{}</svg>", frame(o.frame)), 1);
-	};
 	let size = if o.title.is_empty() { PICTURE_SIZE } else { PICTURE_WITH_TITLE };
 	let mut top = (SIZE - size) / 2.0;
 	let mut label = String::new();
@@ -200,6 +208,13 @@ pub fn picture_key_svg(o: &PictureKey) -> String {
 		top = start;
 		label = title_text(&line, baseline, if o.dim { colors::MUTED } else { colors::WHITE });
 	}
+	// Also on the glyph that stands in for the picture.
+	let corner = badge(o.badge, (SIZE + size) / 2.0, top + size);
+	let Some(png) = o.png.filter(|p| !p.is_empty()) else {
+		let color = if o.dim { colors::GRAY } else { colors::WHITE };
+		let key = glyph_key_svg(o.fallback, &GlyphKey { color, setup: o.setup, title: o.title, title_at: o.title_at });
+		return key.replacen("</svg>", &format!("{}{corner}</svg>", frame(o.frame)), 1);
+	};
 	let href = format!("data:image/png;base64,{png}");
 	let fade = if o.dim { r#" opacity="0.4""# } else { "" };
 	let picture = format!(
@@ -209,7 +224,7 @@ pub fn picture_key_svg(o: &PictureKey) -> String {
 		size = fmt(size)
 	);
 	let dot = if o.setup { setup_dot() } else { String::new() };
-	svg(&(picture + &label + &frame(o.frame) + &dot))
+	svg(&(picture + &label + &frame(o.frame) + &corner + &dot))
 }
 
 pub fn picture_key(o: &PictureKey) -> String {

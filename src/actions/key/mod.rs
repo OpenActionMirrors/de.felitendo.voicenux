@@ -166,6 +166,22 @@ impl Key {
 		self.b.borrow().settings.get(key).cloned()
 	}
 
+	/// Changes settings from the key itself, like the sound it found. OpenDeck keeps them, and an
+	/// open settings page shows them.
+	pub fn save_settings(&self, changes: &[(&str, Value)]) {
+		let settings = {
+			let mut b = self.b.borrow_mut();
+			for (key, value) in changes {
+				b.settings.insert(key.to_string(), value.clone());
+			}
+			b.settings.clone()
+		};
+		self.sd.set_settings(&self.context, &settings);
+		if let Some(plugin) = self.plugin.upgrade() {
+			plugin.state_changed(&self.context);
+		}
+	}
+
 	/// A key is set up when its required settings are filled in.
 	pub fn is_set_up(&self) -> bool {
 		let b = self.b.borrow();

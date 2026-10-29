@@ -165,9 +165,21 @@ pub fn all() -> Vec<&'static Kind> {
 		&voices::NEXT_VOICE,
 		&sounds::STOP_SOUNDS,
 		&sounds::RANDOM_SOUND,
+		&sounds::SAY_SOUND,
 		&sounds::SOUND_VOLUME,
 		&switches::HEAR_SOUNDS,
 		&voices::VOICE_DIAL,
 		&sounds::SOUND_VOLUME_DIAL,
 	]
+}
+
+#[cfg(test)]
+mod tests {
+	#[test]
+	fn every_action_is_registered_with_openaction() {
+		let main = include_str!("../main.rs");
+		for kind in super::all() {
+			assert!(main.contains(&format!("\"{}\"", kind.uuid)), "{} is missing in main.rs", kind.uuid);
+		}
+	}
 }

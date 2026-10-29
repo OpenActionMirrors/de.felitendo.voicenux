@@ -78,6 +78,8 @@ pub struct State {
 	pub mute: bool,
 	pub sound_volume: Option<f64>,
 	pub hear_sounds: bool,
+	/// Voicenux listens to the microphone for a key, and others do not hear you.
+	pub listening: bool,
 }
 
 impl State {
@@ -123,8 +125,11 @@ struct Socket {
 #[derive(Default)]
 pub struct Fake {
 	pub calls: Vec<(String, Option<String>)>,
-	/// Like Voicenux 0.1.0, which does not know sound-restart, sound-toggle and sound-overlap.
+	/// Like Voicenux 0.1.0, which does not know sound-restart, sound-toggle and sound-overlap,
+	/// nor listening.
 	pub old: bool,
+	/// What transcribe says you said.
+	pub said: String,
 }
 
 /// How the connection to Voicenux is.
@@ -529,6 +534,11 @@ impl VoicenuxClient {
 
 	/// An action from API.md. Actions that change something answer with the new state.
 	pub fn call(&self, action: &str, arg: Option<&str>) -> Reply {
+		self.call_waiting(action, arg, CALL_TIMEOUT)
+	}
+
+	/// An action that takes longer, like transcribe: waits up to `ms` for the answer.
+	pub fn call_waiting(&self, action: &str, arg: Option<&str>, ms: f64) -> Reply {
 		#[cfg(test)]
 		if self.fake.borrow().is_some() {
 			return self.fake_call(action, arg);
@@ -547,7 +557,7 @@ impl VoicenuxClient {
 		}
 		let _ = socket.tx.send(Message::Text(js::stringify(&message).into()));
 		// The time starts now, not when the reply is first awaited.
-		let deadline = tokio::time::Instant::now() + Duration::from_secs_f64(CALL_TIMEOUT / 1000.0);
+		let deadline = tokio::time::Instant::now() + Duration::from_secs_f64(ms / 1000.0);
 		let me = self.me.clone();
 		Box::pin(async move {
 			let result = match tokio::time::timeout_at(deadline, rx).await {
@@ -639,7 +649,7 @@ impl VoicenuxClient {
 			return Box::pin(async { Ok(Value::Null) });
 		}
 		fake.calls.push((action.to_string(), arg.map(String::from)));
-		if fake.old && matches!(action, "sound-restart" | "sound-toggle" | "sound-overlap") {
+		if fake.old && matches!(action, "sound-restart" | "sound-toggle" | "sound-overlap" | "listen" | "transcribe" | "find-sound") {
 			let error = format!("unknown action \"{action}\", see API.md");
 			return Box::pin(async move { Err(Error(error)) });
 		}
@@ -659,6 +669,17 @@ impl VoicenuxClient {
 			"voice-changer" => state.voice_changer = flip(state.voice_changer),
 			"mute" => state.mute = flip(state.mute),
 			"sound-volume" => state.sound_volume = arg.and_then(|a| a.parse().ok()),
+			"listen" => state.listening = flip(state.listening),
+			"transcribe" => {
+				state.listening = false;
+				let text = Value::from(fake.said.clone());
+				return Box::pin(async move { Ok(crate::obj! { "text" => text }) });
+			}
+			// Found sounds stay off the soundboard, like in Voicenux.
+			"find-sound" => {
+				let name = arg.unwrap_or_default().to_string();
+				return Box::pin(async move { Ok(crate::obj! { "id" => "found-1", "name" => name, "icon" => "collision" }) });
+			}
 			_ => {}
 		}
 		Box::pin(async { Ok(Value::Null) })

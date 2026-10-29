@@ -61,12 +61,14 @@ make install PLUGINS=~/.var/app/me.amankhanna.opendeck/config/opendeck/plugins
 
 Voice keys show the picture of their voice, with a blue frame while it is in use. The frame turns gray while the voice changer is off. Sound keys get the frame while they play.
 
+**Say a Sound** finds sounds by voice. Hold the key and say a sound, like "vine boom". Others do not hear you while you hold it. Voicenux finds the sound most people liked on MyInstants and puts it on the key, your soundboard stays as it is. Press the key to play it, hold it again for another one. It needs Voicenux 0.4.0 or newer, which downloads its speech recognition the first time (290 MB). It runs on your computer, nothing you say goes online, only the words it searches for.
+
 If Voicenux is not running, the keys show **Voicenux off**. If it does not let other apps in, they show **API off**, and the settings of any key have a button that opens the settings of Voicenux. A key with a yellow dot still needs its settings.
 
 ## Actions
 
 <details>
-<summary>All 14 actions</summary>
+<summary>All 15 actions</summary>
 
 | Action | What it does |
 |---|---|
@@ -79,6 +81,7 @@ If Voicenux is not running, the keys show **Voicenux off**. If it does not let o
 | Next Voice | The next or previous voice, out of your favorites when you have some. Can show the voice in use. |
 | Stop Sounds | Stop all sounds that play. White while one plays. |
 | Random Sound | A random sound, never the same one twice in a row. Shows a dice, or already the sound that comes next. |
+| Say a Sound | Hold and say a sound: it finds the one most people liked on MyInstants and keeps it. Press to play it. |
 | Background | Background sounds of the voice on or off. |
 | Soundboard Volume | Make the sounds louder, quieter or set their volume. Hold to keep going. |
 | Hear Sounds | Hear the sounds yourself too. |

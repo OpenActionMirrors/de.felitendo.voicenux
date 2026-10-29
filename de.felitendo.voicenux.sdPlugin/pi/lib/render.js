@@ -14,6 +14,9 @@ const PICTURE_SIZE = 100;
 const PICTURE_WITH_TITLE = 82;
 // Space between a glyph (or picture) and its title.
 const TITLE_GAP = 16;
+// The small glyph on a picture, and how far its box reaches past the corner of the picture.
+const BADGE = 46;
+const BADGE_OUT = 10;
 
 function svg(content) {
 	return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">${content}</svg>`;
@@ -61,6 +64,12 @@ export function glyphKeySvg(name, { color = COLORS.white, setup = false, title =
 	return svg(glyph(name, { x: GLYPH_OFFSET, y, size: GLYPH_SIZE, color }) + label + (setup ? setupDot : ""));
 }
 
+// A small glyph on the bottom right corner (right, bottom) of a picture.
+function badge(name, right, bottom) {
+	if (!name) return "";
+	return glyph(name, { x: right - BADGE + BADGE_OUT, y: bottom - BADGE + BADGE_OUT, size: BADGE });
+}
+
 // The frame around a voice in use or a sound that plays: the gradient of Voicenux.
 // "on" is the gradient, "off" gray (the voice is picked, but the voice changer is off).
 function frame(kind) {
@@ -73,8 +82,8 @@ function frame(kind) {
 // The picture of a voice or sound (base64 PNG from Voicenux), with a title and a frame.
 // Without a picture (Voicenux sent none), the glyph stands in for it.
 // src: a URL of the picture instead, for the settings pages. dim: drawn faded, like a gray glyph.
-export function pictureKeySvg({ png = null, src = null, fallback = "voice", title = "", titleAt = "below", frame: kind = null, dim = false, setup = false }) {
-	if (!png && !src) return glyphKeySvg(fallback, { title, titleAt, color: dim ? COLORS.gray : COLORS.white, setup }).replace("</svg>", `${frame(kind)}</svg>`);
+// badge: a small glyph in the top right corner, like the lens of Say a Sound.
+export function pictureKeySvg({ png = null, src = null, fallback = "voice", title = "", titleAt = "below", frame: kind = null, dim = false, setup = false, badge: mark = "" }) {
 	const size = title ? PICTURE_WITH_TITLE : PICTURE_SIZE;
 	let top = (SIZE - size) / 2;
 	let label = "";
@@ -84,8 +93,11 @@ export function pictureKeySvg({ png = null, src = null, fallback = "voice", titl
 		top = layout.top;
 		label = titleText(line, { y: layout.baseline, color: dim ? COLORS.muted : COLORS.white });
 	}
+	// Also on the glyph that stands in for the picture.
+	const corner = badge(mark, (SIZE + size) / 2, top + size);
+	if (!png && !src) return glyphKeySvg(fallback, { title, titleAt, color: dim ? COLORS.gray : COLORS.white, setup }).replace("</svg>", `${frame(kind)}${corner}</svg>`);
 	const href = src ?? `data:image/png;base64,${png}`;
 	const fade = dim ? ` opacity="0.4"` : "";
 	const picture = `<image x="${(SIZE - size) / 2}" y="${Math.round(top * 10) / 10}" width="${size}" height="${size}"${fade} href="${href}" xlink:href="${href}"/>`;
-	return svg(picture + label + frame(kind) + (setup ? setupDot : ""));
+	return svg(picture + label + frame(kind) + corner + (setup ? setupDot : ""));
 }

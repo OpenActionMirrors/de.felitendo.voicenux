@@ -221,6 +221,41 @@ export const SCHEMAS = {
 			},
 		],
 	},
+	[`${ID}.saysound`]: {
+		help: "Hold the key and say a sound, like vine boom. Voicenux finds the one most people like on MyInstants and puts it on this key. Your soundboard stays as it is. Press the key to play it.",
+		fields: [
+			{
+				key: "play",
+				label: "Press does",
+				type: "select",
+				options: [
+					["restart", "Play from the start"],
+					["toggle", "Play and stop"],
+					["overlap", "Play on top"],
+				],
+				section: CONTROLS,
+			},
+			{
+				key: "language",
+				label: "You speak",
+				type: "select",
+				options: [
+					["auto", "Automatic"],
+					["en", "English"],
+					["de", "German"],
+				],
+				section: CONTROLS,
+			},
+			{ type: "note", text: "While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (290 MB).", section: CONTROLS },
+			// The sound it found, with the lens. Voicenux keeps it off the soundboard, so it is not in the lists.
+			titleTiles("Name", "showName", "nameAt", (at, s, page) => {
+				if (!s.sound) return glyphKeySvg("saysound", { title: at ? t("Sound") : "", titleAt: at || "below" });
+				const item = page.find("sounds", s.sound) ?? { label: s.soundName || t("Sound"), icon: s.soundIcon };
+				return pictureKeySvg({ src: page.pictureUrl(item.icon), fallback: "sound", title: at ? item.label : "", titleAt: at || "below", badge: "saysound" });
+			}),
+			{ key: "showPlaying", section: LOOK, label: "Frame", type: "checkbox", text: "While the sound plays" },
+		],
+	},
 	[`${ID}.soundvolume`]: {
 		help: "How loud the sounds play for everyone: for others in the Voicenux Microphone, and for you when Hear sounds myself is on.",
 		fields: [

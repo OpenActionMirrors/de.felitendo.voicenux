@@ -230,6 +230,8 @@ fn settings_page_pictures_match_the_keys() {
 		{ "png": "AAAA", "title": "A very very long voice name", "frame": "on" },
 		{ "fallback": "sound", "title": "Bruh", "frame": "on" },
 		{ "fallback": "voice", "setup": true, "dim": true },
+		{ "png": "AAAA", "title": "Vine Boom", "frame": "on", "badge": "saysound" },
+		{ "fallback": "sound", "badge": "saysound" },
 	]);
 	let result = run_js(&format!(
 		r#"
@@ -256,7 +258,8 @@ fn settings_page_pictures_match_the_keys() {
 		}
 	}
 	for (o, js_svg) in picture_cases.as_array().expect("cases").iter().zip(result["pictures"].as_array().expect("pictures")) {
-		let (png, fallback, title, title_at) = (get(o, "png"), get(o, "fallback"), get(o, "title"), get(o, "titleAt"));
+		let (png, fallback, title, title_at, badge) =
+			(get(o, "png"), get(o, "fallback"), get(o, "title"), get(o, "titleAt"), get(o, "badge"));
 		let options = PictureKey {
 			png: png.as_deref(),
 			fallback: fallback.as_deref().unwrap_or("voice"),
@@ -269,6 +272,7 @@ fn settings_page_pictures_match_the_keys() {
 			},
 			dim: o.get("dim").and_then(Value::as_bool).unwrap_or(false),
 			setup: o.get("setup").and_then(Value::as_bool).unwrap_or(false),
+			badge: badge.as_deref().unwrap_or(""),
 		};
 		if render::picture_key_svg(&options) != js_svg.as_str().unwrap_or("") {
 			differences.push(o.to_string());

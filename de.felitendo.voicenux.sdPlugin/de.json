@@ -37,6 +37,10 @@
 		"Name": "Zufälliger Sound",
 		"Tooltip": "Einen zufälligen Sound vom Soundboard abspielen. Zeigt einen Würfel oder schon den Sound, der als Nächstes läuft."
 	},
+	"de.felitendo.voicenux.saysound": {
+		"Name": "Sound ansagen",
+		"Tooltip": "Taste halten und einen Sound sagen. Sie sucht den beliebtesten auf MyInstants und behält ihn. Drücken spielt ihn ab."
+	},
 	"de.felitendo.voicenux.background": {
 		"Name": "Hintergrund",
 		"Tooltip": "Hintergrundgeräusche der Stimme, etwa Regen oder eine Menge, an oder aus."
