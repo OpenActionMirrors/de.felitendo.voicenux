@@ -39,7 +39,7 @@
 	},
 	"de.felitendo.voicenux.saysound": {
 		"Name": "Sound ansagen",
-		"Tooltip": "Taste halten und einen Sound sagen. Sie sucht den beliebtesten auf MyInstants und behält ihn. Drücken spielt ihn ab, zweimal nimmt den nächsten."
+		"Tooltip": "Taste halten und einen Sound sagen. Sie sucht den beliebtesten auf MyInstants und behält ihn. Drücken spielt ihn ab, gleich danach zweimal nimmt den nächsten."
 	},
 	"de.felitendo.voicenux.sayvoice": {
 		"Name": "Stimme ansagen",

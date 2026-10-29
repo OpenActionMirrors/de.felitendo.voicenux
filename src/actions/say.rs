@@ -22,6 +22,9 @@ const SAY_AFTER_MS: f64 = 400.0;
 /// The first time, Voicenux downloads its speech recognition (about 970 MB).
 const TRANSCRIBE_MS: f64 = 600_000.0;
 const FIND_MS: f64 = 120_000.0;
+/// How long after it found a sound a double press takes the next one. After that the sound is
+/// set, and quick presses only play it: you may want to play it again and again.
+const NEXT_MS: f64 = 10_000.0;
 /// How often the key draws the lens again while it looks.
 const FRAME_MS: f64 = 50.0;
 
@@ -91,6 +94,9 @@ struct Saying {
 	look: Option<Timer>,
 	/// Draws the lens again and again while it looks, since when.
 	spin: Option<(Timer, Instant)>,
+	/// Since when the sound is new: a double press may take the next one, see NEXT_MS. The timer
+	/// ends that.
+	fresh: Option<(Timer, Instant)>,
 	/// When the last press played the sound, for a double press.
 	played: Option<Instant>,
 	/// This press came right after that one.
@@ -205,6 +211,19 @@ impl Say {
 		}
 	}
 
+	/// A new sound on the key. For a while, a double press takes the next one, and the key shows
+	/// that.
+	fn fresh(&self, k: &KeyRc) {
+		let timer = k.after(NEXT_MS, |k| {
+			k.own::<Saying>().fresh = None;
+			k.draw();
+		});
+		if let Some((old, _)) = k.own::<Saying>().fresh.replace((timer, Instant::now())) {
+			old.clear();
+		}
+		k.draw();
+	}
+
 	/// A double press: the sound with the next most likes for what you said. The first press of
 	/// the two played the old one, it stops.
 	async fn next(&self, k: &KeyRc) -> Res<()> {
@@ -219,6 +238,7 @@ impl Say {
 		let found = k.client.call_waiting("find-sound", Some(&arg), FIND_MS).await;
 		self.show(k, Phase::Idle, "");
 		keep_sound(k, &found?, &s.sound_words)?;
+		self.fresh(k);
 		k.clear_error();
 		k.show_ok();
 		Ok(())
@@ -286,6 +306,9 @@ impl Behavior for Say {
 			if let Some((spin, _)) = x.spin.take() {
 				spin.clear();
 			}
+			if let Some((fresh, _)) = x.fresh.take() {
+				fresh.clear();
+			}
 			x.down.take().is_some() && x.deaf.take().is_none()
 		};
 		if listening {
@@ -303,7 +326,9 @@ impl Behavior for Say {
 			let mut x = k.own::<Saying>();
 			x.down = Some(now);
 			x.deaf = None;
-			x.second = x.played.take().is_some_and(|at| at.elapsed().as_secs_f64() * 1000.0 < DOUBLE_PRESS_MS);
+			// Only while the sound is new: later, quick presses play it again and again.
+			let fresh = x.fresh.as_ref().is_some_and(|(_, at)| at.elapsed().as_secs_f64() * 1000.0 < NEXT_MS);
+			x.second = fresh && x.played.take().is_some_and(|at| at.elapsed().as_secs_f64() * 1000.0 < DOUBLE_PRESS_MS);
 			x.phase != Phase::Idle
 		};
 		if busy {
@@ -360,13 +385,17 @@ impl Behavior for Say {
 		let found = self.find(k).await;
 		self.show(k, Phase::Idle, "");
 		found.map_err(newer)?;
+		if self.0 == What::Sound {
+			self.fresh(k);
+		}
 		k.clear_error();
 		k.show_ok();
 		Ok(())
 	}
 }
 
-/// The sound it found, with the lens: hold the key for another one.
+/// The sound it found, with the lens: hold the key for another one. While it is new, the mark for
+/// the next one instead: press twice to take it.
 fn render_sound(k: &KeyRc) {
 	let s: SaySoundSettings = k.settings();
 	if s.sound.is_empty() {
@@ -387,7 +416,7 @@ fn render_sound(k: &KeyRc) {
 		title,
 		title_at: &s.name_at,
 		frame: (s.show_playing && playing).then_some(Frame::On),
-		badge: "saysound",
+		badge: if k.own::<Saying>().fresh.is_some() { "next" } else { "saysound" },
 		..Default::default()
 	}));
 }
@@ -530,9 +559,19 @@ mod tests {
 	}
 
 	#[tokio::test(start_paused = true)]
-	async fn a_double_press_takes_the_sound_with_the_next_most_likes() {
+	async fn a_double_press_right_after_finding_takes_the_next_sound() {
 		local(async {
+			// A sound that is set plays on every press, also quick ones: you may spam it.
 			let (_p, k) = key(&SAY_SOUND, json!({ "sound": "found-1", "soundWords": "vine boom", "soundRank": 1 }));
+			for _ in 0..3 {
+				hold(&k, 50.0).await;
+				assert_eq!(last(&k), ["sound-restart", "found-1"]);
+				crate::timers::sleep(80.0).await;
+			}
+			// Right after a find, a double press takes the one with the next most likes.
+			said(&k, "vine boom");
+			hold(&k, 1000.0).await;
+			assert!(k.own::<Saying>().fresh.is_some(), "the key shows the mark for the next one");
 			hold(&k, 50.0).await;
 			assert_eq!(last(&k), ["sound-restart", "found-1"]);
 			crate::timers::sleep(100.0).await;
@@ -542,10 +581,14 @@ mod tests {
 			assert_eq!(last(&k), ["find-sound", r#"{"words":"vine boom","rank":2}"#]);
 			let s: SaySoundSettings = k.settings();
 			assert_eq!((s.sound.as_str(), s.sound_rank), ("found-2", 2.0));
-			// Later, a press plays again.
-			crate::timers::sleep(DOUBLE_PRESS_MS + 100.0).await;
-			hold(&k, 50.0).await;
-			assert_eq!(last(&k), ["sound-restart", "found-2"]);
+			// Ten seconds later it is set: quick presses only play it.
+			crate::timers::sleep(NEXT_MS + 100.0).await;
+			assert!(k.own::<Saying>().fresh.is_none(), "the mark is gone");
+			for _ in 0..3 {
+				hold(&k, 50.0).await;
+				assert_eq!(last(&k), ["sound-restart", "found-2"]);
+				crate::timers::sleep(80.0).await;
+			}
 		})
 		.await;
 	}

@@ -250,7 +250,17 @@ export const SCHEMAS = {
 					return pictureKeySvg({ src: page.pictureUrl(item.icon), fallback: "sound", frame: "on" });
 				},
 			},
-			{ gesture: "twice", label: "Press twice", text: "The next sound", key: () => glyphKeySvg("next") },
+			{
+				gesture: "twice",
+				label: "Press twice",
+				text: "In the first 10 s: the next sound",
+				// How the key looks then: the sound with the next mark.
+				key: (s, page) => {
+					if (!s.sound) return glyphKeySvg("next");
+					const item = page.find("sounds", s.sound) ?? { icon: s.soundIcon };
+					return pictureKeySvg({ src: page.pictureUrl(item.icon), fallback: "sound", badge: "next" });
+				},
+			},
 		],
 		fields: [
 			{
@@ -264,7 +274,7 @@ export const SCHEMAS = {
 				],
 				section: CONTROLS,
 			},
-			{ type: "note", text: "Not the right one? Press twice quickly: the key takes the sound with the next most likes. It does not play it, press again to hear it.", section: CONTROLS },
+			{ type: "note", text: "Not the right one? Press twice quickly within 10 seconds after it found the sound: the key takes the one with the next most likes. It shows the next mark meanwhile. After that, quick presses only play the sound, so you can spam it.", section: CONTROLS },
 			LANGUAGE,
 			{ type: "note", text: "While you hold the key, others do not hear you. The first time, Voicenux downloads its speech recognition (970 MB).", section: CONTROLS },
 			// The sound it found, with the lens. Voicenux keeps it off the soundboard, so it is not in the lists.

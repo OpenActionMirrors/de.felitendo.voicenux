@@ -171,7 +171,7 @@ pub static DE: &[(&str, &str)] = &[
 	("Press twice", "Zweimal drücken"),
 	("Say a sound", "Sound sagen"),
 	("It plays", "Er spielt"),
-	("The next sound", "Der nächste Sound"),
+	("In the first 10 s: the next sound", "In den ersten 10 s: der nächste Sound"),
 	("Say a voice", "Stimme sagen"),
 	("Voice on or off", "Stimme an oder aus"),
 	("Hold the key and say a sound", "Halte die Taste und sag einen Sound"),
@@ -186,8 +186,8 @@ pub static DE: &[(&str, &str)] = &[
 		"Keine Stimme namens {name} in Voicenux. Stimmen werden nicht online gesucht.",
 	),
 	(
-		"Not the right one? Press twice quickly: the key takes the sound with the next most likes. It does not play it, press again to hear it.",
-		"Nicht der richtige? Drück zweimal schnell: Die Taste nimmt den Sound mit den nächstmeisten Likes. Sie spielt ihn nicht ab, drück noch mal, um ihn zu hören.",
+		"Not the right one? Press twice quickly within 10 seconds after it found the sound: the key takes the one with the next most likes. It shows the next mark meanwhile. After that, quick presses only play the sound, so you can spam it.",
+		"Nicht der richtige? Drück in den 10 Sekunden, nachdem sie den Sound gefunden hat, zweimal schnell: Die Taste nimmt den mit den nächstmeisten Likes. So lange zeigt sie das Zeichen für „nächster“. Danach spielen schnelle Drücke nur den Sound ab, du kannst ihn also spammen.",
 	),
 	(
 		"Hold the key and say one of your voices, like Darth Vader. It only picks out of the voices you have in Voicenux, nothing is searched online. Press the key to turn the voice on or off.",

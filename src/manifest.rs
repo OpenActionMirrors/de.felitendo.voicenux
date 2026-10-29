@@ -144,11 +144,11 @@ pub static ACTIONS: &[ActionDef] = &[
 		"saysound",
 		"Say a Sound",
 		"saysound",
-		"Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it, twice for the next one.",
+		"Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it, twice right after for the next one.",
 		&["saysound"],
 		[
 			"Sound ansagen",
-			"Taste halten und einen Sound sagen. Sie sucht den beliebtesten auf MyInstants und behält ihn. Drücken spielt ihn ab, zweimal nimmt den nächsten.",
+			"Taste halten und einen Sound sagen. Sie sucht den beliebtesten auf MyInstants und behält ihn. Drücken spielt ihn ab, gleich danach zweimal nimmt den nächsten.",
 		],
 	),
 	key(

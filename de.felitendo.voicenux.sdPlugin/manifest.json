@@ -208,7 +208,7 @@
 			"UUID": "de.felitendo.voicenux.saysound",
 			"Name": "Say a Sound",
 			"Icon": "images/actions/saysound",
-			"Tooltip": "Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it, twice for the next one.",
+			"Tooltip": "Hold the key and say a sound. It finds the one people like most on MyInstants and keeps it. Press to play it, twice right after for the next one.",
 			"Controllers": [
 				"Keypad"
 			],
