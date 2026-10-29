@@ -13,7 +13,7 @@ use super::sounds::play_as;
 use super::{Behavior, DOUBLE_PRESS_MS, KeyRc, Kind, Press, defaults};
 use crate::i18n::t;
 use crate::icons::colors;
-use crate::render::{Frame, GlyphKey, PictureKey, glyph_key, picture_key};
+use crate::render::{Frame, GlyphKey, PictureKey, glyph_key, picture_key, searching_key};
 use crate::timers::Timer;
 use crate::{Error, Res};
 
@@ -22,6 +22,8 @@ const SAY_AFTER_MS: f64 = 400.0;
 /// The first time, Voicenux downloads its speech recognition (about 290 MB).
 const TRANSCRIBE_MS: f64 = 600_000.0;
 const FIND_MS: f64 = 120_000.0;
+/// How often the key draws the lens again while it looks.
+const FRAME_MS: f64 = 50.0;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum What {
@@ -87,6 +89,8 @@ struct Saying {
 	/// What you said, on the key while it searches.
 	said: String,
 	look: Option<Timer>,
+	/// Draws the lens again and again while it looks, since when.
+	spin: Option<(Timer, Instant)>,
 	/// When the last press played the sound, for a double press.
 	played: Option<Instant>,
 	/// This press came right after that one.
@@ -134,6 +138,14 @@ impl Say {
 	fn show(&self, k: &KeyRc, phase: Phase, said: &str) {
 		{
 			let mut x = k.own::<Saying>();
+			if phase == Phase::Searching && x.spin.is_none() {
+				x.spin = Some((k.every(FRAME_MS, |k| k.draw()), Instant::now()));
+			}
+			if phase != Phase::Searching
+				&& let Some((spin, _)) = x.spin.take()
+			{
+				spin.clear();
+			}
 			x.phase = phase;
 			x.said = said.to_string();
 		}
@@ -218,18 +230,24 @@ impl Behavior for Say {
 
 	fn render(&self, k: &KeyRc) {
 		let at = k.settings::<Listening>().name_at;
-		let (phase, said) = {
+		let (phase, said, since) = {
 			let x = k.own::<Saying>();
-			(x.phase, x.said.clone())
+			(x.phase, x.said.clone(), x.spin.as_ref().map(|(_, since)| *since))
 		};
-		let busy = match phase {
-			Phase::Listening => Some(("mic", colors::RED, t("Listening"))),
-			Phase::Searching => Some(("saysound", colors::WHITE, if said.is_empty() { t("Thinking") } else { said })),
-			Phase::Idle => None,
-		};
-		if let Some((glyph, color, title)) = busy {
-			k.own_title(&title);
-			return k.set_image(&glyph_key(glyph, &GlyphKey { color, title: &title, title_at: &at, ..Default::default() }));
+		match phase {
+			Phase::Listening => {
+				let title = t("Listening");
+				k.own_title(&title);
+				return k
+					.set_image(&glyph_key("mic", &GlyphKey { color: colors::RED, title: &title, title_at: &at, ..Default::default() }));
+			}
+			// The lens looks around, with what you said once it is known.
+			Phase::Searching => {
+				k.own_title(&said);
+				let t = since.map_or(0.0, |since| since.elapsed().as_secs_f64());
+				return k.set_image(&searching_key(t, &GlyphKey { title: &said, title_at: &at, ..Default::default() }));
+			}
+			Phase::Idle => {}
 		}
 		match self.0 {
 			What::Sound => render_sound(k),
@@ -242,6 +260,9 @@ impl Behavior for Say {
 			let mut x = k.own::<Saying>();
 			if let Some(look) = x.look.take() {
 				look.clear();
+			}
+			if let Some((spin, _)) = x.spin.take() {
+				spin.clear();
 			}
 			x.down.take().is_some() && x.deaf.take().is_none()
 		};
@@ -456,6 +477,7 @@ mod tests {
 			assert_eq!((s.sound_words.as_str(), s.sound_rank), ("Vine boom", 1.0));
 			assert!(k.client.sound("found-1").is_none(), "not on the soundboard");
 			assert_eq!(k.own::<Saying>().phase, Phase::Idle);
+			assert!(k.own::<Saying>().spin.is_none(), "the lens rests again");
 			let saved =
 				k.sd.sent.as_ref().unwrap().borrow().iter().any(|m| m["event"] == "setSettings" && m["payload"]["sound"] == "found-1");
 			assert!(saved, "OpenDeck keeps the sound");

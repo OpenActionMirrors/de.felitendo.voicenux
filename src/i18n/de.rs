@@ -166,7 +166,6 @@ pub static DE: &[(&str, &str)] = &[
 	("Name of the sound", "Name des Sounds"),
 	// ----- Say a Sound -----
 	("Listening", "Ich höre"),
-	("Thinking", "Moment …"),
 	("Hold the key and say a sound", "Halte die Taste und sag einen Sound"),
 	("Nothing heard. Hold the key and say a sound.", "Nichts gehört. Halte die Taste und sag einen Sound."),
 	("Still looking for the last one", "Sucht noch"),

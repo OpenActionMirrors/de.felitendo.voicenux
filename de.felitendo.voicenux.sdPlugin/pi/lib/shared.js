@@ -119,7 +119,6 @@ export const DE = {
 	"Next sound: the key shows the sound that plays when you press it.": "Nächster Sound: Die Taste zeigt schon den Sound, der beim Drücken läuft.",
 	"Name of the sound": "Name des Sounds",
 	"Listening": "Ich höre",
-	"Thinking": "Moment …",
 	"Hold the key and say a sound": "Halte die Taste und sag einen Sound",
 	"Nothing heard. Hold the key and say a sound.": "Nichts gehört. Halte die Taste und sag einen Sound.",
 	"Still looking for the last one": "Sucht noch",

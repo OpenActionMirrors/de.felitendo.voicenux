@@ -124,6 +124,10 @@ impl Default for GlyphKey<'_> {
 }
 
 pub fn glyph_key_svg(name: &str, o: &GlyphKey) -> String {
+	svg(&glyph_key_content(name, o))
+}
+
+fn glyph_key_content(name: &str, o: &GlyphKey) -> String {
 	let mut y = GLYPH_OFFSET;
 	let mut label = String::new();
 	if !o.title.is_empty() {
@@ -134,11 +138,89 @@ pub fn glyph_key_svg(name: &str, o: &GlyphKey) -> String {
 		label = title_text(&line, baseline, colors::WHITE);
 	}
 	let dot = if o.setup { setup_dot() } else { String::new() };
-	svg(&(glyph(name, &GlyphOpts { x: GLYPH_OFFSET, y, size: GLYPH_SIZE, color: o.color, ..Default::default() }) + &label + &dot))
+	glyph(name, &GlyphOpts { x: GLYPH_OFFSET, y, size: GLYPH_SIZE, color: o.color, ..Default::default() }) + &label + &dot
 }
 
 pub fn glyph_key(name: &str, o: &GlyphKey) -> String {
 	svg_url(&glyph_key_svg(name, o))
+}
+
+// The edge a light runs round while Say a Sound looks: where the frame of a voice in use is.
+const EDGE_SIDE: f64 = SIZE - 8.0;
+const EDGE_CORNER: f64 = 16.0;
+const EDGE_STRAIGHT: f64 = EDGE_SIDE - 2.0 * EDGE_CORNER;
+const EDGE_QUARTER: f64 = std::f64::consts::FRAC_PI_2 * EDGE_CORNER;
+const EDGE: f64 = 4.0 * (EDGE_STRAIGHT + EDGE_QUARTER);
+
+/// Say a Sound while it looks: the lens stays, and a light runs round the edge of the key. Its
+/// head is cyan and glows, its tail turns deep blue and fades, like the gradient of Voicenux.
+/// `t` is how long it has looked, in seconds. Keys draw it again and again, a Stream Deck shows
+/// no moving pictures.
+pub fn searching_key_svg(t: f64, o: &GlyphKey) -> String {
+	const PIECES: usize = 36;
+	const TAIL: f64 = 200.0;
+	// Once round in 1.5 s.
+	let head = (t / 1.5).fract() * EDGE;
+	let piece = TAIL / PIECES as f64;
+	let edge = |color: &str, opacity: f64, width: f64, from: f64, length: f64| {
+		format!(
+			r#"<rect x="4" y="4" width="{s}" height="{s}" rx="{EDGE_CORNER}" fill="none" stroke="{color}" stroke-opacity="{}" stroke-width="{width}" stroke-dasharray="{} {}" stroke-dashoffset="{}"/>"#,
+			fmt(n2(opacity)),
+			fmt(n2(length)),
+			fmt(n2(EDGE - length)),
+			fmt(n2((-from).rem_euclid(EDGE))),
+			s = fmt(EDGE_SIDE)
+		)
+	};
+	// The glow: the front of the light, blurred.
+	let mut light = format!(
+		r#"<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter><g filter="url(#glow)" opacity="0.7">{}</g>"#,
+		edge(colors::CYAN, 1.0, 10.0, head - 50.0, 50.0)
+	);
+	// Short pieces one after the other, a little over each other so no seam shows. Keys are black
+	// behind, so the tail fades into black in its colors: see-through pieces would show where
+	// they lie over each other.
+	for i in 0..PIECES {
+		let k = i as f64 / (PIECES - 1) as f64;
+		let color = if k < 0.5 { mix(colors::CYAN, colors::SKY, k * 2.0) } else { mix(colors::SKY, colors::BLUE, k * 2.0 - 1.0) };
+		let color = mix("#000000", &color, (1.0 - k).powf(1.5));
+		light += &edge(&color, 1.0, 8.0, head - (i + 1) as f64 * piece, piece + 0.6);
+	}
+	// A round head.
+	let (x, y) = on_edge(head);
+	light += &format!(r#"<circle cx="{}" cy="{}" r="4" fill="{}"/>"#, fmt(n2(x)), fmt(n2(y)), colors::CYAN);
+	svg(&(light + &glyph_key_content("saysound", o)))
+}
+
+/// The point `d` along the edge, from the start of its top side on, clockwise like SVG draws it.
+fn on_edge(d: f64) -> (f64, f64) {
+	let d = d.rem_euclid(EDGE);
+	let side = (d / (EDGE_STRAIGHT + EDGE_QUARTER)).floor();
+	let u = d - side * (EDGE_STRAIGHT + EDGE_QUARTER);
+	// On the top side, then turned round the middle of the key a quarter for each side.
+	let (x, y) = if u < EDGE_STRAIGHT {
+		(4.0 + EDGE_CORNER + u, 4.0)
+	} else {
+		let a = (u - EDGE_STRAIGHT) / EDGE_CORNER;
+		(4.0 + EDGE_SIDE - EDGE_CORNER + EDGE_CORNER * a.sin(), 4.0 + EDGE_CORNER - EDGE_CORNER * a.cos())
+	};
+	let c = SIZE / 2.0;
+	(0..side as usize).fold((x, y), |(x, y), _| (c - (y - c), c + (x - c)))
+}
+
+/// A color between `a` and `b` ("#RRGGBB"): `a` at 0, `b` at 1.
+fn mix(a: &str, b: &str, k: f64) -> String {
+	let channel = |c: &str, i: usize| u8::from_str_radix(&c[1 + 2 * i..3 + 2 * i], 16).unwrap_or(0) as f64;
+	let rgb: Vec<String> = (0..3).map(|i| format!("{:02X}", round(channel(a, i) + (channel(b, i) - channel(a, i)) * k) as u8)).collect();
+	format!("#{}", rgb.concat())
+}
+
+pub fn searching_key(t: f64, o: &GlyphKey) -> String {
+	svg_url(&searching_key_svg(t, o))
+}
+
+fn n2(v: f64) -> f64 {
+	round(v * 100.0) / 100.0
 }
 
 /// The frame around a voice in use or a sound that plays.
@@ -306,5 +388,31 @@ mod tests {
 		assert!(key.contains("translate(28.8 28.8)"), "glyph sits in the middle");
 		assert_eq!(title_line("Robot", 128.0).size, 22.0);
 		assert!(title_line("A very very very long voice name", 128.0).line.ends_with('…'));
+	}
+
+	#[test]
+	fn a_light_runs_round_while_it_looks() {
+		let o = GlyphKey::default();
+		let frames: Vec<String> = [0.0, 0.3, 0.6, 1.0].iter().map(|t| searching_key_svg(*t, &o)).collect();
+		assert!(frames.windows(2).all(|w| w[0] != w[1]), "it moves");
+		assert_eq!(searching_key_svg(0.25, &o), searching_key_svg(1.75, &o), "round once in 1.5 s");
+		// The lens stays as it is.
+		let lens = glyph_key_content("saysound", &o);
+		assert!(frames.iter().all(|f| f.contains(&lens)));
+		let titled = searching_key_svg(0.5, &GlyphKey { title: "Vine boom", ..Default::default() });
+		assert!(titled.contains(">Vine boom</text>"));
+	}
+
+	#[test]
+	fn the_light_stays_on_the_edge() {
+		let near = |(x, y): (f64, f64), (ex, ey): (f64, f64)| (x - ex).abs() < 0.01 && (y - ey).abs() < 0.01;
+		assert!(near(on_edge(0.0), (20.0, 4.0)), "it starts at the top, after the corner");
+		let quarter = EDGE / 4.0;
+		assert!(near(on_edge(EDGE_STRAIGHT / 2.0), (72.0, 4.0)));
+		assert!(near(on_edge(quarter + EDGE_STRAIGHT / 2.0), (140.0, 72.0)), "then down the right side");
+		assert!(near(on_edge(2.0 * quarter + EDGE_STRAIGHT / 2.0), (72.0, 140.0)));
+		assert!(near(on_edge(3.0 * quarter + EDGE_STRAIGHT / 2.0), (4.0, 72.0)));
+		assert!(near(on_edge(EDGE), on_edge(0.0)));
+		assert_eq!(mix("#000000", "#FF8040", 0.5), "#804020");
 	}
 }

@@ -21,7 +21,7 @@ use crate::js;
 use crate::plugin::Plugin;
 use crate::sd::Sd;
 use crate::settings;
-use crate::timers::{Timer, set_timeout};
+use crate::timers::{Timer, set_interval, set_timeout};
 use crate::voicenux::{Change, State, Status, VoicenuxClient};
 use crate::{Error, Res};
 
@@ -434,6 +434,16 @@ impl Key {
 	pub fn after(&self, ms: f64, f: impl FnOnce(KeyRc) + 'static) -> Timer {
 		let me = self.me.clone();
 		set_timeout(ms, move || {
+			if let Some(me) = me.upgrade() {
+				f(me);
+			}
+		})
+	}
+
+	/// The same, again and again.
+	pub fn every(&self, ms: f64, f: impl Fn(KeyRc) + 'static) -> Timer {
+		let me = self.me.clone();
+		set_interval(ms, move || {
 			if let Some(me) = me.upgrade() {
 				f(me);
 			}
