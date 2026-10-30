@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
 	"UUID": "de.felitendo.voicenux",
 	"Name": "Voicenux",
-	"Version": "0.3.0",
+	"Version": "0.4.0",
 	"Author": "Felitendo",
 	"Description": "Control the Voicenux voice changer from OpenDeck: voices with their pictures, the soundboard, mute, push to talk and push to change your voice.",
 	"URL": "https://github.com/voicenux/voicenux-plugin",

@@ -2,6 +2,20 @@
 
 What each release brings, newest first.
 
+## v0.4.0
+
+_30 October 2026_
+
+Welcome to Voicenux for OpenDeck `v0.4.0`! Find sounds and voices by saying their name. The new keys need Voicenux 0.4.0.
+
+### Highlights
+
+- **Say a Sound**: hold the key and say a sound, like "vine boom". It finds the sound most people liked on MyInstants and puts it on the key
+- Not the right sound? Press the key twice quickly for the one with the next most likes
+- **Say a Voice**: hold the key and say one of your voices, like "Darth Vader", to use it
+- A light runs round the key while it looks, and the settings of the key show how it works
+- **Sound (Dial)**: turn to pick a sound, press to play it. Only favorites if you like
+
 ## v0.3.0
 
 _27 October 2026_
